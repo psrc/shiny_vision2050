@@ -32,7 +32,7 @@ function(input, output) {
     p <- plot_ly(r2,
                  x = ~year,
                  y = ~estimate) %>%
-      add_bars() %>%
+      add_lines() %>%
       layout(font = list(family="Segoe UI", size = 13.5),
              title = " ",
              xaxis = list(title = "Year"),
