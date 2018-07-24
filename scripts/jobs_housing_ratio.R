@@ -10,11 +10,10 @@ source("all_runs.R")
 
 run.dir <- c("run_2.run_2018_07_17_15_22") # can have multiple runs
 out.dir <- "../scripts_results"
-years <- c(2017, 2050)
+years <- c(2014, 2050)
 
 
-# transform county data ---------------------------------------------------
-
+# general -----------------------------------------------------------------
 
 years.col <- paste0("yr", years)
 
@@ -28,6 +27,13 @@ attributes <- c("employment", "households")
 extension <- ".csv"
 
 df <- NULL
+
+
+# transform city data -----------------------------------------------------
+
+
+
+# transform county data ---------------------------------------------------
 
 for (r in 1:length(run.dir)) { # for each run
   base.dir <- purrr::pluck(allruns, run.dir[r])
@@ -55,11 +61,13 @@ d <- df.cast[, ehratio := employment/households][order(run)]
 
 # format d
 d2 <- dcast.data.table(d, cntyname + run ~ year, value.var = c("employment", "households", "ehratio"))
-d2[order(run)]
+# d2[order(run)]
+setnames(d2, c(paste0("ehratio_", years.col)), c(paste0("baseyr", years[1]), paste0("naa", years[2])))
 
 
 # export ------------------------------------------------------------------
 
-write.xlsx(d2, file.path(out.dir, "jobs_housing_ratio.xlsx"))
+# write.xlsx(d2, file.path(out.dir, "jobs_housing_ratio.xlsx"))
+write.csv(d2, file.path(out.dir, "jobs_housing_ratio.csv"), row.names = FALSE)
 
 
