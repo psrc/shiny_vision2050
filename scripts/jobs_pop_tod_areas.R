@@ -8,7 +8,7 @@ source("all_runs.R")
 
 # user input --------------------------------------------------------------
 
-run.dir <- c("run_2.run_2018_07_17_15_22") # can have multiple runs
+run.dir <- c("run_2.run_2018_07_17_15_22")
 out.dir <- "../scripts_results"
 years <- c(2014, 2050)
 
@@ -67,4 +67,5 @@ setnames(d2, c("share1", "share2"), c(paste0("baseyr", years[1]), paste0("naa", 
 
 # # write.xlsx(d2, file.path(out.dir, "jobs_housing_ratio.xlsx"))
 write.csv(d2, file.path(out.dir, "jobs_pop_tod_areas.csv"), row.names = FALSE)
+write.csv(d2, file.path("X:/DSA/Vision2050/land_use_tables", "jobs_pop_tod_areas.csv"), row.names = FALSE)
 
