@@ -17,6 +17,7 @@ out.file.nm <- "jobs_housing_ratio"
 years <- c(2014, 2050)
 indicator.dirnm <- "indicators_full"
 
+
 # general -----------------------------------------------------------------
 
 subarea.cnty.lu <- read.xlsx(file.path("../data", "subarea.xlsx"))
