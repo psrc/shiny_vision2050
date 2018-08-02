@@ -11,7 +11,7 @@ setwd(this.dir)
 
 out.dir <- ("../scripts_results")
 attributes <- c("Pop", "Emp")
-scen.type <- "H2O" #"STC" 
+scen.type <- "STC" #"H2O" # 
 
 lookup.file <- list(filepath = "Y:/VISION 2050/RGS/Regional Geographies/CitiesRG_county.xlsx", sheet = "Lookup4model") 
 modimpt.file <- list(filepath = paste0("J:/Projects/V2050/STC_RGS/Script/RGS2050_", scen.type, "_modInput.xlsx"), sheet = c("CityPop0050", "CityEmp0050"))
@@ -57,6 +57,22 @@ for (a in 1:length(attributes)) {
     mutate_(.dots = setNames(paste0(paste0(attributes[a], "Gro", gro.mid.years.abbr), "/CountyTotal"), paste0(paste0(attributes[a], "Gro", gro.mid.years.abbr), "_of_co"))) %>%
     select(-CountyTotal)
   
+  # region by new rgs
+  t4 <- t %>%
+    left_join(lookup, by = c("CityID" = "city_id", "County" = "county_id")) %>%
+    select_(.dots = c(grep(paste0("^", attributes[a]), colnames(.)), grep(paste0("^RG_"), colnames(.)))) %>%
+    mutate_(.dots = setNames(paste0(attributes[a], rev(ext.years), collapse = "-"), paste0(paste0(attributes[a], "Gro"), gro.ext.years.abbr))) %>%
+    select_(.dots = c(grep(paste0("^", attributes[a], "Gro"), colnames(.)), grep(paste0("^RG_"), colnames(.)))) %>%
+    group_by(RG_Proposed) %>% #
+    summarise_if(is.numeric, sum) %>%
+    mutate_(.dots = setNames(paste0("(", paste0(paste0(attributes[a], "Gro"), share.years.abbr, collapse = "-"), ")/", paste0(attributes[a], "Gro", gro.ext.years.abbr)), paste0(attributes[a], "Achieved"))) %>%
+    mutate(RegionTotal = region$RegionTotal) %>%
+    mutate_(.dots = c(setNames(paste0(paste0(attributes[a], "Gro", gro.mid.years.abbr), "/RegionTotal"), paste0(paste0(attributes[a], "Gro", gro.mid.years.abbr), "_of_co")),
+                      setNames(NA, "fips_RG_Proposed_id"),
+                      setNames(NA, "County")
+                      )) %>%
+    select(-RegionTotal)
+  
   # counties 
   t3 <- t %>%
     left_join(lookup, by = c("CityID" = "city_id", "County" = "county_id")) %>%
@@ -72,6 +88,7 @@ for (a in 1:length(attributes)) {
                       setNames("'County'", "RG_Proposed"))) %>%
     select(-RegionTotal)
   
+  dfs[[paste0(attributes[a], "Region")]] <- t4
   dfs[[paste0(attributes[a], "CntyDenom")]] <- cnty
   dfs[[attributes[a]]] <- t2
   dfs[[paste0(attributes[a], "Cnty")]] <- t3
@@ -79,7 +96,9 @@ for (a in 1:length(attributes)) {
 
 df1 <- merge(dfs$Pop, dfs$Emp, by = c("fips_RG_Proposed_id", "County", "RG_Proposed"))
 df2 <- merge(dfs$PopCnty, dfs$EmpCnty, by = c("fips_RG_Proposed_id", "County", "RG_Proposed"))
-df <- rbind(df1, df2)
+df3 <- merge(dfs$PopRegion, dfs$EmpRegion, by = c("fips_RG_Proposed_id", "County", "RG_Proposed"))
+
+df <- bind_rows(df1, df2, df3)
 
 # RLM's 16 headers are actually 17
 colnames(df)[grep(gro.mid.years.abbr, colnames(df))] <- gsub(substr(years[2], 3, 4), "17", colnames(df)[grep(gro.mid.years.abbr, colnames(df))])
