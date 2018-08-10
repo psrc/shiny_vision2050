@@ -1,5 +1,6 @@
 library(data.table)
 library(openxlsx)
+library(tidyverse)
 
 # hit 'source'
 this.dir <- dirname(parent.frame(2)$ofile)
@@ -9,13 +10,45 @@ source("all_runs.R")
 
 # user input --------------------------------------------------------------
 
+# urbansim
 run.dir <- c("run_2.run_2018_07_17_15_22") # can have multiple runs
 out.dir <- "../scripts_results"
 dsa.dir <- "X:/DSA/Vision2050/land_use_tables"
+dsa.dir2 <- "J:/Projects/V2050/SEIS/Data_Support/Tables"
 
 out.file.nm <- "jobs_housing_ratio" 
-years <- c(2014, 2050)
+years <- c(2050)
 indicator.dirnm <- "indicators_full"
+
+# baseyear actuals
+act.yr <- "2017"
+seis.dir <- "J:/Projects/V2050/SEIS/Data_Support/Tables/"
+
+kin.cols <- c("East King", "Sea-Shore", "South King")
+geo.cols <- c("King", kin.cols, "Kitsap", "Pierce", "Snohomish")
+
+# households
+byrh.df <-read.csv(file.path(seis.dir, "15_subareas_households_2017.csv")) %>%
+  select(geography, hhs)
+
+# employment
+byre.df0 <- read.xlsx(file.path(seis.dir, "15_subareas_employment_2017.xlsx")) %>%
+  select(geography = Subarea, emp = Including.Military) %>%
+  filter(geography %in% geo.cols)
+
+kin.tot <- byre.df0 %>%
+  filter(geography %in% kin.cols) %>%
+  summarise(emp = sum(emp)) %>%
+  mutate(geography = "King")
+
+byre.df <- byre.df0 %>%
+  bind_rows(kin.tot)
+
+by.df <- byre.df  %>%
+  left_join(byrh.df, by = "geography") %>%
+  mutate(geography = ifelse(geography == "King", "All King County", geography),
+         ehratio_byr = emp/hhs)
+  
 
 
 # general -----------------------------------------------------------------
@@ -81,9 +114,19 @@ df4 <- rbindlist(list(df3, kc), use.names = TRUE, fill = TRUE)
 df.cast <- dcast.data.table(df4, cnty_name + subarea_name + run + year ~ indicator, value.var = "estimate")
 d <- df.cast[, ehratio := employment/households]
 
-# format d
+# assemble
 d2 <- dcast.data.table(d, cnty_name + subarea_name + run ~ year, value.var = c("employment", "households", "ehratio"))
-setnames(d2, c(paste0("ehratio_", years.col)), c(paste0("baseyr", years[1]), paste0("naa", years[2])))
+d3 <- merge(by.df, d2, by.x = "geography", by.y = "subarea_name") %>% as.data.table
+
+# sum region
+# counties <- c("All King County", "Kitsap", "Pierce", "Snohomish")
+sdcols <- c(grep("emp|hhs|households", colnames(d3), value = T))
+reg <- d3[!(geography %in% kin.cols), lapply(.SD, sum), .SDcols = sdcols
+          ][, `:=` (run = runs, geography = "Region", cnty_name = "Region", ehratio_byr = emp/hhs, ehratio_yr2050 = employment_yr2050/households_yr2050)]
+d4 <- rbindlist(list(d3, reg), use.names = T)
+d4[, `:=` (ehindex_byr = ehratio_byr/ d4[geography == "Region", ehratio_byr], ehindex_yr2050 = ehratio_yr2050/ d4[geography == "Region", ehratio_yr2050])]
+d4[, .(cnty_name, geography, emp, hhs, ehratio_byr, employment_yr2050, households_yr2050, ehratio_yr2050, ehindex_byr, ehindex_yr2050)]
+# setnames(d2, c(paste0("ehratio_", years.col)), c(paste0("baseyr", years[1]), paste0("naa", years[2])))
 
 
 # qc ----------------------------------------------------------------------
@@ -102,7 +145,7 @@ setnames(d2, c(paste0("ehratio_", years.col)), c(paste0("baseyr", years[1]), pas
 
 # export ------------------------------------------------------------------
 
-export.file(d2, "csv", dsa.dir)
-
+# export.file(d2, "csv", dsa.dir)
+export.file(d4, "xlsx", dsa.dir2)
 
 
