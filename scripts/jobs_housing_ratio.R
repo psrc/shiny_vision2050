@@ -16,7 +16,7 @@ source("all_runs.R")
 
 # urbansim
 indicator.dirnm <- "indicators"
-run.dir <- c("DUG" = "run_22.run_2018_08_10_21_05", "H20" = "run_1.run_2018_08_10_21_05", "TOD" = "run_3.run_2018_08_10_21_04") 
+run.dir <- c("DUG" = "run_22.run_2018_08_10_21_05", "H2O" = "run_1.run_2018_08_10_21_05", "TOD" = "run_3.run_2018_08_10_21_04") 
 years <- c(2050) # only one year
 
 # output directory options
@@ -141,5 +141,5 @@ for (r in 1:length(run.dir)) {
 
 # export ------------------------------------------------------------------
 
-write.xlsx(dlist, file.path(dsa.dir, paste0(out.file.nm, ".xlsx")))
+write.xlsx(dlist, file.path(dsa.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
 
