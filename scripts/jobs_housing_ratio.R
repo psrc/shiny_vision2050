@@ -2,6 +2,7 @@ library(data.table)
 library(openxlsx)
 library(tidyverse)
 
+# Aws-model07 - STC - \\aws-model07\E$\opusgit\urbansim_data\data\psrc_parcel\runs\run_2.run_2018_08_15_13_45\
 # Aws-model03 - DUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_22.run_2018_08_10_21_05
 # Aws-model04 - H2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_10_21_05
 # Aws-model05 - TOD - \\aws-model05\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_10_21_04
@@ -16,7 +17,7 @@ source("all_runs.R")
 
 # urbansim
 indicator.dirnm <- "indicators"
-run.dir <- c("DUG" = "run_22.run_2018_08_10_21_05", "H2O" = "run_1.run_2018_08_10_21_05", "TOD" = "run_3.run_2018_08_10_21_04") 
+run.dir <- c("STC" = "run_2.run_2018_08_15_13_45", "DUG" = "run_22.run_2018_08_10_21_05", "H2O2" = "run_1.run_2018_08_10_21_05", "TOD" = "run_3.run_2018_08_10_21_04") 
 years <- c(2050) # only one year
 
 # output directory options
