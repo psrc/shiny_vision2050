@@ -57,7 +57,6 @@ by.df <- byre.df  %>%
   mutate(geography = ifelse(geography == "King", "All King County", geography))
   
 
-
 # general -----------------------------------------------------------------
 
 subarea.cnty.lu <- read.xlsx(file.path("../data", "subarea.xlsx"))
@@ -78,7 +77,7 @@ df.subarea <- NULL
 compile.tbl <- function(geog) {
   df <- NULL
   for (r in 1:length(run.dir)) { # for each run
-    base.dir <- purrr::pluck(allruns, run.dir[r]) #### second run has error
+    base.dir <- purrr::pluck(allruns, run.dir[r]) 
     for (a in 1:length(attributes)) { # for each attribute
       filename <- paste0(geog,'__',"table",'__',attributes[a], ind.extension)
       datatable <- read.csv(file.path(base.dir, indicator.dirnm, filename), header = TRUE, sep = ",")
