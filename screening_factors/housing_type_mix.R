@@ -1,34 +1,25 @@
 library(data.table)
 
-# Aws-model04 - iSTC - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_17_13_06
-# Aws-model03 - iDUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_17_15_45
-# Aws-model05 - iH2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_4.run_2018_08_17_16_15
+if(!exists("set.globals") || !set.globals) {
+  source("settings.R")
+  # setwd(script.dir)
+  source("functions.R")
+}
 
-# Aws-model07 - STC - \\aws-model07\E$\opusgit\urbansim_data\data\psrc_parcel\runs\run_2.run_2018_08_15_13_45
-# Aws-model03 - DUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_22.run_2018_08_10_21_05
-# Aws-model04 - H2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_10_21_05
-# Aws-model05 - TOD - \\aws-model05\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_10_21_04
+# settings --------------------------------------------------------------
 
-
-# user input --------------------------------------------------------------
-
-this.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/scripts" 
-# this.dir <-  dirname(parent.frame(2)$ofile)
+curr.dir <- getwd()
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(this.dir)
+# source("settings.R")
+# source("functions.R")
 source("all_runs.R")
 
-# urbansim
-run.dir <- c("iSTC" = "run_3.run_2018_08_17_13_06",
-             "iDUG" = "run_1.run_2018_08_17_15_45", 
-             "iH2O2" = "run_4.run_2018_08_17_16_15", 
-             "TOD" = "run_3.run_2018_08_10_21_04") 
-years <- c(2050) # only one year
-
-out.dir <- "../scripts_results"
-dsa.dir <- "X:/DSA/Vision2050/land_use_tables"
-data.dir <- file.path("../data")
-
-out.file.nm <- "housing_type_mix"
+run.dir <- settings$global$run.dir
+years <- settings$global$years
+data.dir <-settings$global$data.dir
+out.dir <- settings$global$out.dir
+out.file.nm <- settings$htm$out.file.nm
 
 # lookup table
 constraints <- fread(file.path(data.dir, "development_constraints.csv"))
@@ -77,4 +68,7 @@ for (r in 1:length(run.dir)) { # for each run
 
 # export ------------------------------------------------------------------
 
-write.xlsx(dlist, file.path(dsa.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
+write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
+
+setwd(curr.dir)
+set.globals <- FALSE

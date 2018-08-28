@@ -3,38 +3,28 @@ library(openxlsx)
 library(tidyverse)
 library(foreign)
 
+if(!exists("set.globals") || !set.globals) {
+  source("settings.R")
+  # setwd(script.dir)
+  source("functions.R")
+}
 
-# Aws-model04 - iSTC - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_17_13_06
-# Aws-model03 - iDUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_17_15_45
-# Aws-model05 - iH2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_4.run_2018_08_17_16_15
+# settings --------------------------------------------------------------
 
-# Aws-model07 - STC - \\aws-model07\E$\opusgit\urbansim_data\data\psrc_parcel\runs\run_2.run_2018_08_15_13_45
-# Aws-model03 - DUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_22.run_2018_08_10_21_05
-# Aws-model04 - H2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_10_21_05
-# Aws-model05 - TOD - \\aws-model05\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_10_21_04
-
-
-# user input --------------------------------------------------------------
-
-this.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/scripts"
-# this.dir <- dirname(parent.frame(2)$ofile)
+curr.dir <- getwd()
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(this.dir)
+# source("settings.R")
+# source("functions.R")
 source("all_runs.R")
 
-indicator.dirnm <- "indicators"
-run.dir <- c("iSTC" = "run_3.run_2018_08_17_13_06",
-             "iDUG" = "run_1.run_2018_08_17_15_45", 
-             "iH2O2" = "run_4.run_2018_08_17_16_15", 
-             "TOD" = "run_3.run_2018_08_10_21_04") 
-years <- c(2050) # only one year
+run.dir <- settings$global$run.dir
+years <- settings$global$years
+data.dir <-settings$global$data.dir
+out.dir <- settings$global$out.dir
+out.file.nm <- settings$goa$out.file.nm 
+
 byr <- 2017
-
-data.dir <- "../data"
-out.dir <- "../scripts_results"
-dsa.dir <- "X:/DSA/Vision2050/land_use_tables"
-
-out.file.nm <- "dist_growth_opp_areas" 
-
 
 # base year actuals -------------------------------------------------------
 
@@ -45,23 +35,22 @@ byro.df <- read.csv(ofm.file.nm, stringsAsFactors = F) %>%
   select(ends_with("10"), population_byr = contains("POP"), households_byr = contains("OHU"))
 
 # employment
-emp.dir <- "J:/Confid/Emp/Internal_Support/Growth_Mgmt/V2050/EIS/Tracts"
+# emp.dir <- "J:/Confid/Emp/Internal_Support/Growth_Mgmt/V2050/EIS/Tracts"
 emp.file.nm <- "Census_Tract_jobs.dbf"
 empcol <- "Jobs_2017"
 
-byre.df0 <- read.dbf(file.path(emp.dir, emp.file.nm)) %>%
+byre.df0 <- read.dbf(file.path(data.dir, emp.file.nm)) %>%
   select_(.dots = c("GEOID10", setNames(empcol, "emp_no_enlist"))) %>%
   mutate_at("GEOID10", as.character)
 
 
 # enlisted personnel ------------------------------------------------------
 
-enlist.lu <- read.xlsx(file.path(data.dir, "enlisted_personnel_geo.xlsx"))
+enlist.lu <- read.xlsx(file.path(data.dir, settings$global$enlist.lu.nm))
 
-enlist.mil.file.nm <- "enlisted_personnel_SoundCast_08202018.csv"
+enlist.mil.file.nm <- settings$global$enlist.mil.file.nm
 mil <- read.csv(file.path(data.dir, enlist.mil.file.nm), stringsAsFactors = FALSE) %>%
   drop_na(everything())
-
 colnames(mil)[grep("^X\\d+", colnames(mil))] <- gsub("X", "yr", colnames(mil)[grep("^X\\d+", colnames(mil))])
 
 mil.df <- mil %>% 
@@ -89,7 +78,8 @@ byr.df <- byro.df %>%
 # GQ population -----------------------------------------------------------
 
 # read GQ pop (incorporate to 2050 data)
-gq.file <- read.xlsx(file.path(data.dir, "group-quarters.xlsx"))
+
+gq.file <- read.xlsx(file.path(data.dir, settings$global$gq.file.nm))
 gq.cols <- c("census_tract_id", setNames(paste0("`", years, "`"), "gq"))
 gq <- gq.file %>%
   select_(.dots = gq.cols) %>%
@@ -100,43 +90,38 @@ gq <- gq.file %>%
 
 og.comp.ind <- "Y:/VISION 2050/Data/Opportunity Mapping Update/Finalopportunity_analysis - Opportunity_Index_06062012_Region_.csv"
 
-tract.lu <- read.csv(file.path("../data", "tract_opportunity_lookup.csv"), stringsAsFactors = FALSE)
+tract.lu <- read.csv(file.path(data.dir, "tract_opportunity_lookup.csv"), stringsAsFactors = FALSE)
 
 years.col <- paste0("yr", years)
-
-# format run names for table
-runs <- lapply(run.dir, function(x) unlist(strsplit(x,"[.]"))[[1]]) %>% unlist
 
 attributes <- c("population", "employment", "households")
 ind.extension <- ".csv"
 
-df <- NULL
-
-
 # functions ---------------------------------------------------------------
 
-compile.tbl <- function(geog) {
-  df <- NULL
-  for (r in 1:length(run.dir)) { # for each run
-    base.dir <- purrr::pluck(allruns, run.dir[r]) 
-    for (a in 1:length(attributes)) { # for each attribute
-      filename <- paste0(geog,'__',"table",'__',attributes[a], ind.extension)
-      datatable <- read.csv(file.path(base.dir, indicator.dirnm, filename), header = TRUE, sep = ",")
-      colnames(datatable)[2: ncol(datatable)] <- str_replace(colnames(datatable)[2: ncol(datatable)], '\\w+_', 'yr') # rename columns
-      colnames(datatable)[1] <- str_replace(colnames(datatable)[1], '\\w+_', 'name_')
-      datatable$indicator <- attributes[a]
-      datatable$run <- run.dir[r]
-      df <- rbindlist(list(df, datatable), use.names = TRUE, fill = TRUE)
-    }
-  }
-  return(df)
-}
+# compile.tbl <- function(geog) {
+#   df <- NULL
+#   for (r in 1:length(run.dir)) { # for each run
+#     base.dir <- purrr::pluck(allruns, run.dir[r]) 
+#     for (a in 1:length(attributes)) { # for each attribute
+#       filename <- paste0(geog,'__',"table",'__',attributes[a], ind.extension)
+#       datatable <- read.csv(file.path(base.dir, indicator.dirnm, filename), header = TRUE, sep = ",")
+#       colnames(datatable)[2: ncol(datatable)] <- str_replace(colnames(datatable)[2: ncol(datatable)], '\\w+_', 'yr') # rename columns
+#       colnames(datatable)[1] <- str_replace(colnames(datatable)[1], '\\w+_', 'name_')
+#       datatable$indicator <- attributes[a]
+#       datatable$run <- run.dir[r]
+#       df <- rbindlist(list(df, datatable), use.names = TRUE, fill = TRUE)
+#     }
+#   }
+#   return(df)
+# }
 
 
 # transform data ----------------------------------------------------------
 
-opp.levels <- c("Very Low Opportunity", "Low Opportunity", "Moderate Opportunity", "High Opportunity", "Very High Opportunity")
-alldata <- compile.tbl("census_tract")
+opp.levels <- c("Very Low Opportunity", "Low Opportunity", "Moderate Opportunity", "High Opportunity", "Very High Opportunity", "Moderate to Very High Opportunity Areas")
+# alldata <- compile.tbl("census_tract")
+alldata <- compile.tbl("census_tract", allruns, run.dir, attributes, ind.extension)
 
 df2 <- melt.data.table(alldata,
                        id.vars = c("name_id", "run", "indicator"),
@@ -184,10 +169,16 @@ df7.sep <- df7.melt %>%
 delta.expr <- parse(text = paste0("delta := ", years.col, " - byr"))
 sdcols <- c("byr", years.col)
 df8 <- df7.sep[!is.na(Comp.Index), lapply(.SD, sum), .SDcols = sdcols, by = list(indicator, Comp.Index, run)][, eval(delta.expr)]
-# all.sums <- df8[, lapply(.SD, sum), .SDcols = c(sdcols, "delta"), by = list(indicator, run)][, Comp.Index := "All"]
+
 delta.sums <- df8[, .(sum_delta = sum(delta)), by = list(indicator, run)]
 
-df9 <- df8[delta.sums, on = c("indicator", "run")
+# calculate Mod to Very High opp areas
+mod.high.opp <- df8[Comp.Index %in% opp.levels[3:5], lapply(.SD, sum), .SDcols = c(sdcols, "delta"), by = list(indicator, run)
+                    ][, Comp.Index := eval(opp.levels[6])]
+
+df8.bind <- rbindlist(list(df8, mod.high.opp), use.names = TRUE)
+
+df9 <- df8.bind[delta.sums, on = c("indicator", "run")
            ][, share_delta := delta/sum_delta
              ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
                ][order(indicator, Comp.Index.sort)
@@ -206,5 +197,7 @@ for (r in 1:length(run.dir)) {
 
 # export ------------------------------------------------------------------
 
-write.xlsx(dlist, file.path(dsa.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
+write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
 
+setwd(curr.dir)
+set.globals <- FALSE

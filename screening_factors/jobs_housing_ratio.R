@@ -2,43 +2,32 @@ library(data.table)
 library(openxlsx)
 library(tidyverse)
 
-# Aws-model04 - iSTC - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_17_13_06
-# Aws-model03 - iDUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_17_15_45
-# Aws-model05 - iH2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_4.run_2018_08_17_16_15
+if(!exists("set.globals") || !set.globals) {
+  source("settings.R")
+  # setwd(script.dir)
+  source("functions.R")
+}
 
-# Aws-model07 - STC - \\aws-model07\E$\opusgit\urbansim_data\data\psrc_parcel\runs\run_2.run_2018_08_15_13_45
-# Aws-model03 - DUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_22.run_2018_08_10_21_05
-# Aws-model04 - H2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_10_21_05
-# Aws-model05 - TOD - \\aws-model05\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_10_21_04
+# settings --------------------------------------------------------------
 
-
-# user input --------------------------------------------------------------
-
-this.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/scripts" 
-# this.dir <-  dirname(parent.frame(2)$ofile)
+curr.dir <- getwd()
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(this.dir)
+# source("settings.R")
+# source("functions.R")
 source("all_runs.R")
 
-# urbansim
-indicator.dirnm <- "indicators"
-run.dir <- c("iSTC" = "run_3.run_2018_08_17_13_06",
-             "iDUG" = "run_1.run_2018_08_17_15_45", 
-             "iH2O2" = "run_4.run_2018_08_17_16_15", 
-             "TOD" = "run_3.run_2018_08_10_21_04") 
-years <- c(2050) # only one year
+run.dir <- settings$global$run.dir
+years <- settings$global$years
+data.dir <-settings$global$data.dir
+out.dir <- settings$global$out.dir
+out.file.nm <- settings$jhr$out.file.nm
+
 byr <- 2017
-
-# output directory options
-out.dir <- "../scripts_results"
-dsa.dir <- "X:/DSA/Vision2050/land_use_tables"
-data.dir <- file.path("../data")
-
-out.file.nm <- "jobs_housing_ratio" 
-
 
 # general -----------------------------------------------------------------
 
-subarea.cnty.lu <- read.xlsx(file.path("../data", "subarea.xlsx"))
+subarea.cnty.lu <- read.xlsx(file.path(data.dir, "subarea.xlsx"))
 
 years.col <- paste0("yr", years)
 kin.cols <- c("East King","Sea-Shore", "South King")
@@ -47,8 +36,6 @@ geo.cols <- c("King", kin.cols, "Kitsap", "Pierce", "Snohomish")
 attributes <- c("employment", "households")
 new.attributes <- c("employment", "housing_unit")
 ind.extension <- ".csv"
-
-df.subarea <- NULL
 
 
 # base year actuals -------------------------------------------------------
@@ -67,9 +54,9 @@ byre.df0 <- read.xlsx(file.nm, sheet = "emp_psrc") %>%
 
 # enlisted personnel ------------------------------------------------------
 
-enlist.lu <- read.xlsx(file.path(data.dir, "enlisted_personnel_geo.xlsx"))
+enlist.lu <- read.xlsx(file.path(data.dir, settings$global$enlist.lu.nm))
 
-enlist.mil.file.nm <- "enlisted_personnel_SoundCast_08202018.csv"
+enlist.mil.file.nm <-  settings$global$enlist.mil.file.nm
 
 mil <- read.csv(file.path(data.dir, enlist.mil.file.nm), stringsAsFactors = FALSE) %>%
   drop_na(everything())
@@ -102,27 +89,27 @@ byr.df <- byre.df %>%
 
 # functions ---------------------------------------------------------------
 
-compile.tbl <- function(geog) {
-  df <- NULL
-  for (r in 1:length(run.dir)) { # for each run
-    base.dir <- purrr::pluck(allruns, run.dir[r]) 
-    for (a in 1:length(attributes)) { # for each attribute
-      filename <- paste0(geog,'__',"table",'__',attributes[a], ind.extension)
-      datatable <- read.csv(file.path(base.dir, indicator.dirnm, filename), header = TRUE, sep = ",")
-      colnames(datatable)[2: ncol(datatable)] <- str_replace(colnames(datatable)[2: ncol(datatable)], '\\w+_', 'yr') # rename columns
-      colnames(datatable)[1] <- str_replace(colnames(datatable)[1], '\\w+_', 'name_')
-      datatable$indicator <- attributes[a]
-      datatable$run <- run.dir[r]
-      df <- rbindlist(list(df, datatable), use.names = TRUE, fill = TRUE)
-    }
-  }
-  return(df)
-}
+# compile.tbl <- function(geog) {
+#   df <- NULL
+#   for (r in 1:length(run.dir)) { # for each run
+#     base.dir <- purrr::pluck(allruns, run.dir[r]) 
+#     for (a in 1:length(attributes)) { # for each attribute
+#       filename <- paste0(geog,'__',"table",'__',attributes[a], ind.extension)
+#       datatable <- read.csv(file.path(base.dir, indicator.dirnm, filename), header = TRUE, sep = ",")
+#       colnames(datatable)[2: ncol(datatable)] <- str_replace(colnames(datatable)[2: ncol(datatable)], '\\w+_', 'yr') # rename columns
+#       colnames(datatable)[1] <- str_replace(colnames(datatable)[1], '\\w+_', 'name_')
+#       datatable$indicator <- attributes[a]
+#       datatable$run <- run.dir[r]
+#       df <- rbindlist(list(df, datatable), use.names = TRUE, fill = TRUE)
+#     }
+#   }
+#   return(df)
+# }
 
 
 # subarea forecast data -----------------------------------------------------
 
-df.subarea <- compile.tbl('subarea')
+df.subarea <- compile.tbl('subarea', allruns, run.dir, attributes, ind.extension)
 
 df2 <- melt.data.table(df.subarea,
                        id.vars = c("name_id", "run", "indicator"),
@@ -185,5 +172,7 @@ for (r in 1:length(run.dir)) {
 
 # export ------------------------------------------------------------------
 
-write.xlsx(dlist, file.path(dsa.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
+write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
 
+setwd(curr.dir)
+set.globals <- FALSE
