@@ -3,6 +3,9 @@ library(openxlsx)
 library(tidyverse)
 
 # Aws-model04 - iSTC - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_17_13_06
+# Aws-model03 - iDUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_17_15_45
+# Aws-model05 - iH2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_4.run_2018_08_17_16_15
+
 # Aws-model07 - STC - \\aws-model07\E$\opusgit\urbansim_data\data\psrc_parcel\runs\run_2.run_2018_08_15_13_45
 # Aws-model03 - DUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_22.run_2018_08_10_21_05
 # Aws-model04 - H2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_10_21_05
@@ -19,9 +22,8 @@ source("all_runs.R")
 # urbansim
 indicator.dirnm <- "indicators"
 run.dir <- c("iSTC" = "run_3.run_2018_08_17_13_06",
-             "STC" = "run_2.run_2018_08_15_13_45", 
-             "DUG" = "run_22.run_2018_08_10_21_05", 
-             "H2O2" = "run_1.run_2018_08_10_21_05", 
+             "iDUG" = "run_1.run_2018_08_17_15_45", 
+             "iH2O2" = "run_4.run_2018_08_17_16_15", 
              "TOD" = "run_3.run_2018_08_10_21_04") 
 years <- c(2050) # only one year
 byr <- 2017

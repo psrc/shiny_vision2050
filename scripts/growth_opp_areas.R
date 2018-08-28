@@ -3,8 +3,12 @@ library(openxlsx)
 library(tidyverse)
 library(foreign)
 
+
 # Aws-model04 - iSTC - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_17_13_06
-# Aws-model07 - STC - \\aws-model07\E$\opusgit\urbansim_data\data\psrc_parcel\runs\run_2.run_2018_08_15_13_45\ 
+# Aws-model03 - iDUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_17_15_45
+# Aws-model05 - iH2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_4.run_2018_08_17_16_15
+
+# Aws-model07 - STC - \\aws-model07\E$\opusgit\urbansim_data\data\psrc_parcel\runs\run_2.run_2018_08_15_13_45
 # Aws-model03 - DUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_22.run_2018_08_10_21_05
 # Aws-model04 - H2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_10_21_05
 # Aws-model05 - TOD - \\aws-model05\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_10_21_04
@@ -18,9 +22,9 @@ setwd(this.dir)
 source("all_runs.R")
 
 indicator.dirnm <- "indicators"
-run.dir <- c("STC" = "run_2.run_2018_08_15_13_45", 
-             "DUG" = "run_22.run_2018_08_10_21_05", 
-             "H2O2" = "run_1.run_2018_08_10_21_05", 
+run.dir <- c("iSTC" = "run_3.run_2018_08_17_13_06",
+             "iDUG" = "run_1.run_2018_08_17_15_45", 
+             "iH2O2" = "run_4.run_2018_08_17_16_15", 
              "TOD" = "run_3.run_2018_08_10_21_04") 
 years <- c(2050) # only one year
 byr <- 2017
@@ -34,7 +38,7 @@ out.file.nm <- "dist_growth_opp_areas"
 
 # base year actuals -------------------------------------------------------
 
-# population and housing (ofm) #### May need to use HHP
+# total population and households (ofm)
 ofm.file.nm <- "J:/OtherData/OFM/SAEP/SAEP Extract_2017_10October03/requests/v2050/tract_population_households.csv"
 byro.df <- read.csv(ofm.file.nm, stringsAsFactors = F) %>%
   mutate_at("GEOID10", as.character) %>%
@@ -84,8 +88,13 @@ byr.df <- byro.df %>%
 
 # GQ population -----------------------------------------------------------
 
-# read GQ pop, incorporate to 2050 data
-
+# read GQ pop (incorporate to 2050 data)
+gq.file <- read.xlsx(file.path(data.dir, "group-quarters.xlsx"))
+gq.cols <- c("census_tract_id", setNames(paste0("`", years, "`"), "gq"))
+gq <- gq.file %>%
+  select_(.dots = gq.cols) %>%
+  group_by_(.dots = gq.cols[1]) %>%
+  summarise_(.dots = setNames("sum(gq)", "gq"))
 
 # general -----------------------------------------------------------------
 
@@ -150,11 +159,18 @@ df6 <- df5[, eval(fcast.expr)][, ..fcast.sel.col]
 setnames(df6, paste0("employment_w_enlist_", years.col), paste0("employment_", years.col))
 
 # add GQ population to forecast pop df
+df6.gq <- df6 %>%
+  left_join(gq, by = c("GEOID10" = "census_tract_id")) %>%
+  replace_na(list(gq = 0)) %>%
+  as.data.table()
 
-
+gq.expr <- parse(text = paste0(paste0("population_w_gq_", years.col), ":= ", paste0("population_", years.col), "+ gq"))
+gq.sel.col <- c(colnames(df6.gq)[1:6], paste0("population_w_gq_", years.col))
+df6.gq2 <- df6.gq[, eval(gq.expr)][, ..gq.sel.col]
+setnames(df6.gq2, paste0("population_w_gq_", years.col), paste0("population_", years.col))
 
 # join with base year df
-df7 <- df6[byr.df, on = "GEOID10"]
+df7 <- df6.gq2[byr.df, on = "GEOID10"]
 
 # calculate
 df7.melt <- melt.data.table(df7, id.vars = colnames(df7)[1:4], measure.vars = colnames(df7)[5:10], variable.name = "attr", value.name = "estimate")
@@ -190,5 +206,5 @@ for (r in 1:length(run.dir)) {
 
 # export ------------------------------------------------------------------
 
-# write.xlsx(dlist, file.path(dsa.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
+write.xlsx(dlist, file.path(dsa.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
 
