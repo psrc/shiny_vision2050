@@ -14,19 +14,10 @@ if(!exists("set.globals") || !set.globals) {
 curr.dir <- getwd()
 this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(this.dir)
-# source("settings.R")
-# source("functions.R")
 source("all_runs.R")
 
-run.dir <- settings$global$run.dir
-years <- settings$global$years
-data.dir <-settings$global$data.dir
-out.dir <- settings$global$out.dir
 out.file.nm <- settings$pjta$out.file.nm 
 
-byr <- 2017
-
-indicator.dirnm <- "indicators"
 
 # general -----------------------------------------------------------------
 
@@ -82,9 +73,6 @@ byr.df <- byro.df %>%
 
 # enlisted personnel ------------------------------------------------------
 
-enlist.lu <- read.xlsx(file.path(data.dir, settings$global$enlist.lu.nm))
-
-enlist.mil.file.nm <- settings$global$enlist.mil.file.nm
 mil <- read.csv(file.path(data.dir, enlist.mil.file.nm), stringsAsFactors = FALSE) %>%
   drop_na(everything())
 colnames(mil)[grep("^X\\d+", colnames(mil))] <- gsub("X", "yr", colnames(mil)[grep("^X\\d+", colnames(mil))])
@@ -100,32 +88,11 @@ mil.df <- mil %>%
 # GQ population -----------------------------------------------------------
 
 # read GQ pop (incorporate to 2050 data)
-gq.file <- read.xlsx(file.path(data.dir, settings$global$gq.file.nm))
 gq.cols <- c("tod_id", setNames(paste0("`", years, "`"), "gq"))
 gq <- gq.file %>%
   select_(.dots = gq.cols) %>%
   group_by_(.dots = gq.cols[1]) %>%
   summarise_(.dots = setNames("sum(gq)", "gq"))
-
-
-# functions ---------------------------------------------------------------
-
-# compile.tbl <- function(geog) {
-#   df <- NULL
-#   for (r in 1:length(run.dir)) { # for each run
-#     base.dir <- purrr::pluck(allruns, run.dir[r]) 
-#     for (a in 1:length(attributes)) { # for each attribute
-#       filename <- paste0(geog,'__',"table",'__',attributes[a], ind.extension)
-#       datatable <- read.csv(file.path(base.dir, indicator.dirnm, filename), header = TRUE, sep = ",")
-#       colnames(datatable)[2: ncol(datatable)] <- str_replace(colnames(datatable)[2: ncol(datatable)], '\\w+_', 'yr') # rename columns
-#       colnames(datatable)[1] <- str_replace(colnames(datatable)[1], '\\w+_', 'name_')
-#       datatable$indicator <- attributes[a]
-#       datatable$run <- run.dir[r]
-#       df <- rbindlist(list(df, datatable), use.names = TRUE, fill = TRUE)
-#     }
-#   }
-#   return(df)
-# }
 
 
 # Regional Totals ---------------------------------------------------------

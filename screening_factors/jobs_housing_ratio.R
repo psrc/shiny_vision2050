@@ -13,17 +13,10 @@ if(!exists("set.globals") || !set.globals) {
 curr.dir <- getwd()
 this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(this.dir)
-# source("settings.R")
-# source("functions.R")
 source("all_runs.R")
 
-run.dir <- settings$global$run.dir
-years <- settings$global$years
-data.dir <-settings$global$data.dir
-out.dir <- settings$global$out.dir
 out.file.nm <- settings$jhr$out.file.nm
 
-byr <- 2017
 
 # general -----------------------------------------------------------------
 
@@ -54,10 +47,6 @@ byre.df0 <- read.xlsx(file.nm, sheet = "emp_psrc") %>%
 
 # enlisted personnel ------------------------------------------------------
 
-enlist.lu <- read.xlsx(file.path(data.dir, settings$global$enlist.lu.nm))
-
-enlist.mil.file.nm <-  settings$global$enlist.mil.file.nm
-
 mil <- read.csv(file.path(data.dir, enlist.mil.file.nm), stringsAsFactors = FALSE) %>%
   drop_na(everything())
 
@@ -85,26 +74,6 @@ byr.df <- byre.df %>%
   left_join(byro.df, by = "geography") %>%
   select(geography, contains("_byr")) %>%
   as.data.table()
-
-
-# functions ---------------------------------------------------------------
-
-# compile.tbl <- function(geog) {
-#   df <- NULL
-#   for (r in 1:length(run.dir)) { # for each run
-#     base.dir <- purrr::pluck(allruns, run.dir[r]) 
-#     for (a in 1:length(attributes)) { # for each attribute
-#       filename <- paste0(geog,'__',"table",'__',attributes[a], ind.extension)
-#       datatable <- read.csv(file.path(base.dir, indicator.dirnm, filename), header = TRUE, sep = ",")
-#       colnames(datatable)[2: ncol(datatable)] <- str_replace(colnames(datatable)[2: ncol(datatable)], '\\w+_', 'yr') # rename columns
-#       colnames(datatable)[1] <- str_replace(colnames(datatable)[1], '\\w+_', 'name_')
-#       datatable$indicator <- attributes[a]
-#       datatable$run <- run.dir[r]
-#       df <- rbindlist(list(df, datatable), use.names = TRUE, fill = TRUE)
-#     }
-#   }
-#   return(df)
-# }
 
 
 # subarea forecast data -----------------------------------------------------
