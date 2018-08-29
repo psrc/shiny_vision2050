@@ -11,14 +11,8 @@ if(!exists("set.globals") || !set.globals) {
 curr.dir <- getwd()
 this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(this.dir)
-# source("settings.R")
-# source("functions.R")
 source("all_runs.R")
 
-run.dir <- settings$global$run.dir
-years <- settings$global$years
-data.dir <-settings$global$data.dir
-out.dir <- settings$global$out.dir
 out.file.nm <- settings$htm$out.file.nm
 
 # lookup table

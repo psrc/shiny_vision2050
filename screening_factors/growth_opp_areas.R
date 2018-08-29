@@ -14,17 +14,10 @@ if(!exists("set.globals") || !set.globals) {
 curr.dir <- getwd()
 this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(this.dir)
-# source("settings.R")
-# source("functions.R")
 source("all_runs.R")
 
-run.dir <- settings$global$run.dir
-years <- settings$global$years
-data.dir <-settings$global$data.dir
-out.dir <- settings$global$out.dir
 out.file.nm <- settings$goa$out.file.nm 
 
-byr <- 2017
 
 # base year actuals -------------------------------------------------------
 
@@ -35,7 +28,6 @@ byro.df <- read.csv(ofm.file.nm, stringsAsFactors = F) %>%
   select(ends_with("10"), population_byr = contains("POP"), households_byr = contains("OHU"))
 
 # employment
-# emp.dir <- "J:/Confid/Emp/Internal_Support/Growth_Mgmt/V2050/EIS/Tracts"
 emp.file.nm <- "Census_Tract_jobs.dbf"
 empcol <- "Jobs_2017"
 
@@ -46,9 +38,6 @@ byre.df0 <- read.dbf(file.path(data.dir, emp.file.nm)) %>%
 
 # enlisted personnel ------------------------------------------------------
 
-enlist.lu <- read.xlsx(file.path(data.dir, settings$global$enlist.lu.nm))
-
-enlist.mil.file.nm <- settings$global$enlist.mil.file.nm
 mil <- read.csv(file.path(data.dir, enlist.mil.file.nm), stringsAsFactors = FALSE) %>%
   drop_na(everything())
 colnames(mil)[grep("^X\\d+", colnames(mil))] <- gsub("X", "yr", colnames(mil)[grep("^X\\d+", colnames(mil))])
@@ -79,7 +68,6 @@ byr.df <- byro.df %>%
 
 # read GQ pop (incorporate to 2050 data)
 
-gq.file <- read.xlsx(file.path(data.dir, settings$global$gq.file.nm))
 gq.cols <- c("census_tract_id", setNames(paste0("`", years, "`"), "gq"))
 gq <- gq.file %>%
   select_(.dots = gq.cols) %>%
@@ -97,30 +85,11 @@ years.col <- paste0("yr", years)
 attributes <- c("population", "employment", "households")
 ind.extension <- ".csv"
 
-# functions ---------------------------------------------------------------
-
-# compile.tbl <- function(geog) {
-#   df <- NULL
-#   for (r in 1:length(run.dir)) { # for each run
-#     base.dir <- purrr::pluck(allruns, run.dir[r]) 
-#     for (a in 1:length(attributes)) { # for each attribute
-#       filename <- paste0(geog,'__',"table",'__',attributes[a], ind.extension)
-#       datatable <- read.csv(file.path(base.dir, indicator.dirnm, filename), header = TRUE, sep = ",")
-#       colnames(datatable)[2: ncol(datatable)] <- str_replace(colnames(datatable)[2: ncol(datatable)], '\\w+_', 'yr') # rename columns
-#       colnames(datatable)[1] <- str_replace(colnames(datatable)[1], '\\w+_', 'name_')
-#       datatable$indicator <- attributes[a]
-#       datatable$run <- run.dir[r]
-#       df <- rbindlist(list(df, datatable), use.names = TRUE, fill = TRUE)
-#     }
-#   }
-#   return(df)
-# }
-
 
 # transform data ----------------------------------------------------------
 
 opp.levels <- c("Very Low Opportunity", "Low Opportunity", "Moderate Opportunity", "High Opportunity", "Very High Opportunity", "Moderate to Very High Opportunity Areas")
-# alldata <- compile.tbl("census_tract")
+
 alldata <- compile.tbl("census_tract", allruns, run.dir, attributes, ind.extension)
 
 df2 <- melt.data.table(alldata,
