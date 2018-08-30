@@ -17,7 +17,7 @@ get.military <- function(geog) {
 get.gq <- function(geog) {
   # GQ population -----------------------------------------------------------
   gq.cols <- lapply(c(geog, "year"), as.symbol)
-  gq <- gq.file %>%
+  gq <- gq.file2 %>%
     gather(contains("yr"), key = "year", value = "estimate") %>% 
     filter(year %in% paste0("yr", c(byr, years))) %>%
     group_by_(.dots = gq.cols) %>%

@@ -27,8 +27,9 @@ enlist.lu <- read.xlsx(file.path(data.dir, enlist.lu.nm))
 enlist.mil.file.nm <- "enlisted_personnel_SoundCast_08202018.csv"
 
 gq.file.nm <- "group-quarters.xlsx"
-gq.file <- read.xlsx(file.path(data.dir, "group-quarters.xlsx"), check.names = TRUE)
-colnames(gq.file)[grep("^X\\d+", colnames(gq.file))] <- gsub("X", "yr", colnames(gq.file)[grep("^X\\d+", colnames(gq.file))])
+gq.file <- read.xlsx(file.path(data.dir, gq.file.nm)) # for Christy's scripts
+gq.file2 <- read.xlsx(file.path(data.dir, gq.file.nm), check.names = TRUE) # for Hana's scripts
+colnames(gq.file2)[grep("^X\\d+", colnames(gq.file2))] <- gsub("X", "yr", colnames(gq.file2)[grep("^X\\d+", colnames(gq.file2))])
 
 settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
                  htm = list(out.file.nm = "17_housing_type_mix"),
