@@ -1,4 +1,5 @@
 library(data.table)
+library(openxlsx)
 
 if(!exists("set.globals") || !set.globals) {
   source("settings.R")
@@ -49,14 +50,50 @@ for (r in 1:length(run.dir)) { # for each run
   #                                     levels = c("low", "med", "high"))]
   
   cols <- c("residential_units", "residential_units_base")
+  tot.cols <- paste0("sum_", cols)
+  share.cols <- paste0("share_", cols)
+  share.expr1 <- parse(text = paste0(share.cols[2], ":=", cols[2], "/", tot.cols[2]))
+  share.expr2 <- parse(text = paste0(share.cols[1], ":=", cols[1], "/", tot.cols[1]))
+
+  # region
   df <- pcl[!is.na(res_density_type), lapply(.SD, sum), .SDcols = cols, by = "res_density_type"][order(res_density_type)]
-  df[, delta := residential_units - residential_units_base
-     ][, sum_delta := sum(delta)
-       ][, share_delta := delta/sum_delta
-         ][, `:=` (run = run.dir[r], scenario = names(run.dir[r]))]
-  setcolorder(df, c("run", "scenario", "res_density_type", cols[2], cols[1], "delta", "sum_delta", "share_delta"))
-  setnames(df, cols[1], paste0(cols[1], "_yr", years))
-  dlist[[names(run.dir[r])]] <- df
+  tot.reg <- df[, lapply(.SD, sum), .SDcols = cols][, res_density_type := "total"]
+  df[, (tot.cols[2]) := tot.reg$residential_units_base
+     ][,(tot.cols[1]) := tot.reg$residential_units
+       ][, delta := residential_units - residential_units_base
+         ][, sum_delta := sum(delta)
+           ][, geography := "Region"]
+
+  # county
+  df.cnty <- pcl[!is.na(res_density_type), lapply(.SD, sum), .SDcols = cols, by = .(county_id, res_density_type)][order(county_id, res_density_type)]
+  tot.cnty <- df.cnty[, lapply(.SD, sum), .SDcols = cols, by = county_id][, `:=` (res_density_type = "total")]
+  
+  tot.cnty2 <- tot.cnty[, 1:3]
+  setnames(tot.cnty2, cols, tot.cols)
+  
+  df.cnty2 <- df.cnty[tot.cnty2, on = "county_id"
+                       ][, delta := residential_units - residential_units_base]
+  df.cnty2.sum.delta <- df.cnty2[, lapply(.SD, sum), .SDcols = "delta", by = county_id]
+  setnames(df.cnty2.sum.delta, "delta", "sum_delta")
+  df.cnty3 <- df.cnty2[df.cnty2.sum.delta, on = "county_id"
+                       ][county_id == 33, geography := "King"
+                         ][county_id == 35, geography := "Kitsap"
+                           ][county_id == 53, geography := "Pierce"
+                             ][county_id == 61, geography := "Snohomish"
+                               ][, county_id := NULL]
+  
+  
+  df.all <- rbindlist(list(df.cnty3, df), use.names = TRUE)
+  
+  df.all[, share_delta := delta/sum_delta
+             ][, `:=` (run = run.dir[r], scenario = names(run.dir[r]))
+               ][, eval(share.expr1)
+                 ][, eval(share.expr2)]
+
+  setcolorder(df.all, c("geography", "run", "scenario", "res_density_type", cols[2], cols[1], rev(tot.cols), rev(share.cols), "delta", "sum_delta", "share_delta"))
+  
+  
+  dlist[[names(run.dir[r])]] <- df.all
 }
 
 
