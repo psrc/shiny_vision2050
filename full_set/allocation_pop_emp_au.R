@@ -1,3 +1,5 @@
+# Indicator 16: Allocation of population and employment
+
 library(data.table)
 library(openxlsx)
 
@@ -9,11 +11,10 @@ if(!exists("set.globals") || !set.globals) {
 }
 source("all_runs.R")
 
-years <- c(2050) # only one year
 years.col <- paste0("yr", years)
-years.to.keep <- c(years.col, "yr2017")
+years.to.keep <- paste0("yr", c(byr, years))
 
-out.file.nm <- "16_allocation_pop_emp_au"
+out.file.nm <- settings$alloc$out.file.nm
 
 geos <- c("city", "grid")
 #geos <- "grid"
@@ -57,7 +58,7 @@ read.actual.city <- function(file) {
 }
 
 export.allocation.fips_rgs <- function(data, ...) {
-  write.xlsx(data, file.path(dsa.dir, paste0(out.file.nm, "_fips_rgs_", Sys.Date(), ".xlsx")))
+  write.xlsx(data, file.path(out.dir, paste0(out.file.nm, "_fips_rgs_", Sys.Date(), ".xlsx")))
 }
 
 export.allocation.city <- function(data, ...) {
@@ -72,24 +73,25 @@ export.allocation.city <- function(data, ...) {
     tbl[ , Total := CitiesTowns + Core + HCT + Metro + Rural + UU]
     tbls[[scenario]] <- tbl
   }
-  write.xlsx(tbls, file.path(dsa.dir, paste0(out.file.nm, "_city_fips_", Sys.Date(), ".xlsx")))
+  write.xlsx(tbls, file.path(out.dir, paste0(out.file.nm, "_city_fips_", Sys.Date(), ".xlsx")))
 }
 
 export.allocation.grid <- function(data, geo.id) {
   for(scenario in names(data)) {
     df <- copy(data[[scenario]])
-    df[, scenario := NULL][, run := NULL]
+    df[, run := NULL]
     df <- dcast(df, name_id ~ indicator, value.var = "delta" )
     setnames(df, "name_id", geo.id)
-    write.csv(df, file.path(dsa.dir, paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
+    write.csv(df, file.path(out.dir, "Maps", paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
               row.names = FALSE)
   }
 }
 
 
 for(geo in geos) {
+  cat("\nComputing indicator 16 for ", geo, " geography")
   geo.id <- paste0(geo, "_id")
-  alldata <- compile.tbl(geo)
+  alldata <- compile.tbl(geo, allruns, run.dir, attributes, ind.extension)
   dfm <- data.table::melt(alldata,
                           id.vars = c("name_id", "run", "indicator"),
                           measure.vars = grep("yr", colnames(alldata), value = TRUE),
@@ -103,29 +105,25 @@ for(geo in geos) {
       dfm <- rbind(dfm, actual[, run := r])
   }
   dfm <- dfm[year %in% years.to.keep]
+  
   # add military and GQ
-  mil <- data.table(get.military(geo.id))
-  setnames(mil, geo.id, "name_id")
-  mil[, indicator := "employment"]
-  gq <- data.table(get.gq(geo.id))
-  setnames(gq, geo.id, "name_id")
-  gq[, indicator := "population"]
-  milgq <- rbind(mil, gq)
-  milgq <- rbind(milgq, milgq[, .(estimate = sum(estimate)), by = .(name_id, year)][, indicator := "activity_units"])
+  milgq <- compile.mil.gq(geo.id)
   dfmmgq <- dfm[milgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
+  
   # compute difference between end year and 2017
   dfmmgq[dfmmgq[year == "yr2017"], delta := round(estimate - i.estimate), on = c("name_id", "run", "indicator")]
   dfmmgq <- dfmmgq[year == years.col][, year := NULL][, estimate := NULL]
+  
   # loop through each run
   dlist <- NULL
   for (r in 1:length(run.dir)) {
-    t <- dfmmgq[run == run.dir[r], ][, scenario := names(run.dir[r])]
-    setcolorder(t, c("indicator", "run", "scenario", "delta"))
+    t <- dfmmgq[run == run.dir[r], ]
+    setcolorder(t, c("indicator", "run", "delta"))
     dlist[[names(run.dir[r])]] <- t
   }
   # export
   do.call(paste0("export.allocation.", geo), list(dlist, geo.id))
-  
+  cat("\n")
 }
 
 
