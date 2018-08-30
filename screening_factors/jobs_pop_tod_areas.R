@@ -4,16 +4,18 @@ library(tidyverse)
 library(foreign)
 
 if(!exists("set.globals") || !set.globals) {
+  curr.dir <- getwd()
+  this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+  setwd(this.dir)
   source("settings.R")
-  # setwd(script.dir)
   source("functions.R")
 }
 
 # settings --------------------------------------------------------------
 
-curr.dir <- getwd()
-this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
-setwd(this.dir)
+# curr.dir <- getwd()
+# this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+# setwd(this.dir)
 source("all_runs.R")
 
 out.file.nm <- settings$pjta$out.file.nm 
@@ -35,18 +37,31 @@ ind.extension <- ".csv"
 
 # base year actuals -------------------------------------------------------
 
-# total population (tod blocksplits)
-pop.file.nm <- "J:/Projects/Population/OFMPopHsgData/OFMSAEP/Custom_Ests/HHPop_est_Block_Spilt/tod_V2050/est2017/tod_est2017.xlsx"
+# total population (tod2 blocksplits, does not sum to regional total)
+pop.file.nm <- "J:/Projects/Population/OFMPopHsgData/OFMSAEP/Custom_Ests/HHPop_est_Block_Spilt/tod2_V2050/est2017/tod_est2017.xlsx"
 byro.df <- read.xlsx(pop.file.nm) %>%
   select(tod_id = bSecField, population_byr = splitblkTotpop) %>%
   group_by(tod_id) %>%
   summarise(population_byr = sum(population_byr))
 
+# add remaining population to tod_id = 0
+ofm.file.nm <- "J:/OtherData/OFM/SAEP/SAEP Extract_2017_10October03/requests/v2050/county.xlsx"
+ofm <- read.xlsx(ofm.file.nm)
+ofm.cnty <- ofm %>% select(starts_with("POP"))
+ofm.region <- ofm.cnty %>% summarise_(.dots = setNames(paste0("sum(", paste0("POP", byr), ")"), "population_ofm"))
+
+tot.byro.df <- byro.df %>% summarise(population_byr = sum(population_byr))
+todid0 <- ofm.region$population_ofm - tot.byro.df$population_byr # add to 0
+upd.todid0 <- byro.df$population_byr[byro.df$tod_id == 0] + todid0
+
+byro.df2 <- byro.df %>%
+  mutate(population_byr = replace(population_byr, tod_id == 0, upd.todid0))
+  
 # employment
-emp.dir <- "J:/Confid/Emp/Internal_Support/Growth_Mgmt/V2050/EIS/TOD"
-emp.file.nm <- "TOD.dbf"
+# emp.dir <- "J:/Confid/Emp/Internal_Support/Growth_Mgmt/V2050/EIS/TOD"
+emp.file.nm <- "TOD_Jobs17.dbf"
 empcol <- "Jobs_2017"
-todcol <- "TOD_Area3"
+todcol <- "TOD_Area5"
 
 # employment: find tod = 0 values
 tot.emp.df <- read.xlsx(file.path(data.dir, "tod_employment_2017_23.xlsx"))
@@ -56,7 +71,7 @@ non.tod.emp <- tot.emp.df %>%
   select(tod_id, employment_byr)
 
 # employment: assemble (enlisted not included)
-byre.df0 <- read.dbf(file.path(emp.dir, emp.file.nm)) %>%
+byre.df0 <- read.dbf(file.path(data.dir, emp.file.nm)) %>%
   select_(.dots = c(setNames(todcol, "tod_id"), setNames(empcol, "employment_byr"))) %>%
   group_by(tod_id) %>%
   summarise(employment_byr = sum(employment_byr)) %>%
@@ -64,7 +79,7 @@ byre.df0 <- read.dbf(file.path(emp.dir, emp.file.nm)) %>%
   mutate_at("tod_id", as.character)
 
 # assemble base year data (enlisted not included)
-byr.df <- byro.df %>%
+byr.df <- byro.df2 %>%
   left_join(byre.df0, by = "tod_id") %>%
   select(tod_id, contains("_byr")) %>%
   replace_na(list(employment_byr = 0)) %>%
@@ -181,4 +196,4 @@ for (r in 1:length(run.dir)) {
 write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
 
 setwd(curr.dir)
-set.globals <- FALSE
+# set.globals <- FALSE

@@ -3,13 +3,11 @@ library(openxlsx)
 library(tidyverse)
 library(foreign)
 
-curr.dir <- getwd()
-this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
-setwd(this.dir)
-
 if(!exists("set.globals") || !set.globals) {
+  curr.dir <- getwd()
+  this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+  setwd(this.dir)
   source("settings.R")
-  # setwd(script.dir)
   source("functions.R")
 }
 
@@ -184,4 +182,4 @@ for (r in 1:length(run.dir)) {
 write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
 
 setwd(curr.dir)
-set.globals <- FALSE
+
