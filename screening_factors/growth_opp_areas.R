@@ -3,6 +3,10 @@ library(openxlsx)
 library(tidyverse)
 library(foreign)
 
+curr.dir <- getwd()
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(this.dir)
+
 if(!exists("set.globals") || !set.globals) {
   source("settings.R")
   # setwd(script.dir)
@@ -11,9 +15,9 @@ if(!exists("set.globals") || !set.globals) {
 
 # settings --------------------------------------------------------------
 
-curr.dir <- getwd()
-this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
-setwd(this.dir)
+# curr.dir <- getwd()
+# this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+# setwd(this.dir)
 source("all_runs.R")
 
 out.file.nm <- settings$goa$out.file.nm 
@@ -137,9 +141,12 @@ df7.sep <- df7.melt %>%
 
 delta.expr <- parse(text = paste0("delta := ", years.col, " - byr"))
 sdcols <- c("byr", years.col)
+sumcols <- paste0("sum_", sdcols)
 df8 <- df7.sep[!is.na(Comp.Index), lapply(.SD, sum), .SDcols = sdcols, by = list(indicator, Comp.Index, run)][, eval(delta.expr)]
 
 delta.sums <- df8[, .(sum_delta = sum(delta)), by = list(indicator, run)]
+region.sums <- df8[, lapply(.SD, sum), .SDcols = sdcols, by = list(indicator, run)]
+setnames(region.sums, sdcols, sumcols)
 
 # calculate Mod to Very High opp areas
 mod.high.opp <- df8[Comp.Index %in% opp.levels[3:5], lapply(.SD, sum), .SDcols = c(sdcols, "delta"), by = list(indicator, run)
@@ -147,18 +154,26 @@ mod.high.opp <- df8[Comp.Index %in% opp.levels[3:5], lapply(.SD, sum), .SDcols =
 
 df8.bind <- rbindlist(list(df8, mod.high.opp), use.names = TRUE)
 
-df9 <- df8.bind[delta.sums, on = c("indicator", "run")
-           ][, share_delta := delta/sum_delta
-             ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
-               ][order(indicator, Comp.Index.sort)
-                 ][, Comp.Index.sort := NULL]
+sharecols <- paste0("share_", sdcols)
+share.expr1 <- parse(text = paste0(sharecols[1], ":=", sdcols[1], "/", sumcols[1]))
+share.expr2 <- parse(text = paste0(sharecols[2], ":=", sdcols[2], "/", sumcols[2]))
+
+df9 <- df8.bind[region.sums, on = c("indicator", "run")
+                ][delta.sums, on = c("indicator", "run")
+                 ][, eval(share.expr1)
+                   ][, eval(share.expr2)
+                     ][, share_delta := delta/sum_delta
+                       ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
+                         ][order(indicator, Comp.Index.sort)
+                           ][, Comp.Index.sort := NULL]
+
 
 # loop through each run
 dlist <- NULL
 for (r in 1:length(run.dir)) {
   t <- NULL
   t <- df9[run == run.dir[r], ][, scenario := names(run.dir[r])]
-  setcolorder(t, c("indicator", "Comp.Index", "run", "scenario", "byr", years.col, "delta", "sum_delta", "share_delta"))
+  setcolorder(t, c("indicator", "Comp.Index", "run", "scenario", sdcols, sumcols, sharecols, grep("delta", colnames(t), value = TRUE)))
   setnames(t, c("Comp.Index", "byr"), c("index", paste0("byr", byr))) 
   dlist[[names(run.dir[r])]] <- t
 }
