@@ -2,20 +2,16 @@ library(data.table)
 library(openxlsx)
 library(tidyverse)
 
+# settings --------------------------------------------------------------
+
 if(!exists("set.globals") || !set.globals) {
   curr.dir <- getwd()
   this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
   setwd(this.dir)
   source("settings.R")
-  # setwd(script.dir)
   source("functions.R")
 }
 
-# settings --------------------------------------------------------------
-
-# curr.dir <- getwd()
-# this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
-# setwd(this.dir)
 source("all_runs.R")
 
 out.file.nm <- settings$jhr$out.file.nm

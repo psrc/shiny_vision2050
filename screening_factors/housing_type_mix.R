@@ -1,6 +1,8 @@
 library(data.table)
 library(openxlsx)
 
+# settings --------------------------------------------------------------
+
 if(!exists("set.globals") || !set.globals) {
   curr.dir <- getwd()
   this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -9,11 +11,6 @@ if(!exists("set.globals") || !set.globals) {
   source("functions.R")
 }
 
-# settings --------------------------------------------------------------
-
-# curr.dir <- getwd()
-# this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
-# setwd(this.dir)
 source("all_runs.R")
 
 out.file.nm <- settings$htm$out.file.nm
