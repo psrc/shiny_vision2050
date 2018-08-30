@@ -5,8 +5,9 @@
 
 run.dir <- c("iSTC" = "run_3.run_2018_08_17_13_06",
              "iDUG" = "run_1.run_2018_08_17_15_45",
-             "iH2O2" = "run_4.run_2018_08_17_16_15", 
+             "iH2O2" = "run_4.run_2018_08_17_16_15",
              "TOD" = "run_3.run_2018_08_10_21_04")
+# )
 
 out.dir <- "X:/DSA/Vision2050/land_use_tables"
           
@@ -27,6 +28,7 @@ settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
                  pjta = list(out.file.nm = "30_jobs_pop_tod_areas"),
                  jhr = list(out.file.nm = "18_jobs_housing_ratio")
                  ) 
+
 
 
 

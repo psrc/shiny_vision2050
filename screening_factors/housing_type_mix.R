@@ -2,16 +2,18 @@ library(data.table)
 library(openxlsx)
 
 if(!exists("set.globals") || !set.globals) {
+  curr.dir <- getwd()
+  this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+  setwd(this.dir)
   source("settings.R")
-  # setwd(script.dir)
   source("functions.R")
 }
 
 # settings --------------------------------------------------------------
 
-curr.dir <- getwd()
-this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
-setwd(this.dir)
+# curr.dir <- getwd()
+# this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+# setwd(this.dir)
 source("all_runs.R")
 
 out.file.nm <- settings$htm$out.file.nm
@@ -76,12 +78,14 @@ for (r in 1:length(run.dir)) { # for each run
   df.cnty2.sum.delta <- df.cnty2[, lapply(.SD, sum), .SDcols = "delta", by = county_id]
   setnames(df.cnty2.sum.delta, "delta", "sum_delta")
   df.cnty3 <- df.cnty2[df.cnty2.sum.delta, on = "county_id"
-                       ][county_id == 33, geography := "King"
-                         ][county_id == 35, geography := "Kitsap"
-                           ][county_id == 53, geography := "Pierce"
-                             ][county_id == 61, geography := "Snohomish"
-                               ][, county_id := NULL]
+                       ]
+  # [county_id == 33, geography := "King"
+  #                        ][county_id == 35, geography := "Kitsap"
+  #                          ][county_id == 53, geography := "Pierce"
+  #                            ][county_id == 61, geography := "Snohomish"
+  #                              ][, county_id := NULL]
   
+  df.cnty3[, geography := switch(as.character(county_id), "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = county_id][, county_id := NULL]
   
   df.all <- rbindlist(list(df.cnty3, df), use.names = TRUE)
   
@@ -102,4 +106,3 @@ for (r in 1:length(run.dir)) { # for each run
 write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
 
 setwd(curr.dir)
-set.globals <- FALSE
