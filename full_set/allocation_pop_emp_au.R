@@ -10,16 +10,19 @@ if(!exists("set.globals") || !set.globals) {
 source("all_runs.R")
 
 years <- c(2050) # only one year
+years.col <- paste0("yr", years)
+years.to.keep <- c(years.col, "yr2017")
 
 out.file.nm <- "16_allocation_pop_emp_au"
 
-geos <- c("fips_rgs", "grid")
-geos <- c("fips_rgs")
+geos <- c("city", "grid")
+#geos <- "grid"
 attributes <- c("population", "employment", "activity_units")
 ind.extension <- ".csv"
 
 cities <- read.xlsx(file.path(data.dir, "cities_rgs.xlsx"))
-file.name.actual <- list(fips_rgs = "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support/script_input/Control-Totals-STC.xlsx")
+file.name.actual <- list(fips_rgs = file.path(data.dir, "Control-Totals-STC.xlsx"))
+file.name.actual$city <- file.name.actual$fips_rgs
 
 read.actual.fips_rgs <- function(file) {
   inds <- list(POP = c("population", "2017"), JOBS = c("employment", "2016"))
@@ -33,26 +36,97 @@ read.actual.fips_rgs <- function(file) {
   }
   au <- alldf[, .(estimate = sum(estimate)), by = .(fips_rgs_id)]
   alldf <- rbind(alldf, au[, indicator := "activity_units"][, year := "yr2017"])
+  setnames(alldf, "fips_rgs_id", "name_id")
   return(alldf)
+}
+
+read.actual.city <- function(file) {
+  inds <- list(POP = c("population", "2017"), JOBS = c("employment", "2016"))
+  alldf <- NULL
+  for(ind in names(inds)) {
+    df <- read.xlsx(file, sheet = ind, startRow = 2)
+    df <- df[, c("city_id", inds[[ind]][2])] %>% data.table 
+    setnames(df, inds[[ind]][2], "yr2017")
+    df <- df[, .(estimate = sum(yr2017)), by = .(city_id)][, indicator := inds[[ind]][1]][, year := "yr2017"]
+    alldf <- rbind(alldf, df)
+  }
+  au <- alldf[, .(estimate = sum(estimate)), by = .(city_id)]
+  alldf <- rbind(alldf, au[, indicator := "activity_units"][, year := "yr2017"])
+  setnames(alldf, "city_id", "name_id")
+  return(alldf)
+}
+
+export.allocation.fips_rgs <- function(data, ...) {
+  write.xlsx(data, file.path(dsa.dir, paste0(out.file.nm, "_fips_rgs_", Sys.Date(), ".xlsx")))
+}
+
+export.allocation.city <- function(data, ...) {
+  juris <- fread(file.path(data.dir, "Juris_Reporting.csv"))
+  setnames(juris, "CityID", "name_id")
+  tbls <- NULL
+  for(scenario in names(data)) {
+    df <- copy(data[[scenario]])
+    df <- merge(df, juris[, .(name_id, county, RG_Proposed)], by = "name_id")
+    tbl <- dcast(df[,.(delta, county, RG_Proposed, indicator)], county + indicator ~ RG_Proposed, 
+                 value.var = "delta", fun.aggregate = sum)
+    tbl[ , Total := CitiesTowns + Core + HCT + Metro + Rural + UU]
+    tbls[[scenario]] <- tbl
+  }
+  write.xlsx(tbls, file.path(dsa.dir, paste0(out.file.nm, "_city_fips_", Sys.Date(), ".xlsx")))
+}
+
+export.allocation.grid <- function(data, geo.id) {
+  for(scenario in names(data)) {
+    df <- copy(data[[scenario]])
+    df[, scenario := NULL][, run := NULL]
+    df <- dcast(df, name_id ~ indicator, value.var = "delta" )
+    setnames(df, "name_id", geo.id)
+    write.csv(df, file.path(dsa.dir, paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
+              row.names = FALSE)
+  }
 }
 
 
 for(geo in geos) {
+  geo.id <- paste0(geo, "_id")
   alldata <- compile.tbl(geo)
-  actual <- do.call(paste0("read.actual.", geo), list(file.name.actual[[geo]]))
   dfm <- data.table::melt(alldata,
-                         id.vars = c("name_id", "run", "indicator"),
-                         measure.vars = grep("yr", colnames(alldata), value = TRUE),
-                         variable.name = "year", value.name = "estimate")
-  dfm <- dfm[year %in% paste0("yr", years)]
-  mil <- get.military(paste0(geo, "_id"))
-  # TODO: replace 2017 modeled b y actual and add military
-  #dfm[mil , .(estimate_m = estimate + i.enlist_estimate), on = c(geo, "year")]
-  #for (r in 1:length(run.dir)) {
-    
-  #}
+                          id.vars = c("name_id", "run", "indicator"),
+                          measure.vars = grep("yr", colnames(alldata), value = TRUE),
+                          variable.name = "year", value.name = "estimate")
+  
+  if(geo != "grid") { # replace modelled with actual
+    actual <- do.call(paste0("read.actual.", geo), list(file.name.actual[[geo]]))
+    dfm <- dfm[year != "yr2017",] # remove modelled current year
+    # replace with actual for all runs
+    for(r in unique(dfm$run)) 
+      dfm <- rbind(dfm, actual[, run := r])
+  }
+  dfm <- dfm[year %in% years.to.keep]
+  # add military and GQ
+  mil <- data.table(get.military(geo.id))
+  setnames(mil, geo.id, "name_id")
+  mil[, indicator := "employment"]
+  gq <- data.table(get.gq(geo.id))
+  setnames(gq, geo.id, "name_id")
+  gq[, indicator := "population"]
+  milgq <- rbind(mil, gq)
+  milgq <- rbind(milgq, milgq[, .(estimate = sum(estimate)), by = .(name_id, year)][, indicator := "activity_units"])
+  dfmmgq <- dfm[milgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
+  # compute difference between end year and 2017
+  dfmmgq[dfmmgq[year == "yr2017"], delta := round(estimate - i.estimate), on = c("name_id", "run", "indicator")]
+  dfmmgq <- dfmmgq[year == years.col][, year := NULL][, estimate := NULL]
+  # loop through each run
+  dlist <- NULL
+  for (r in 1:length(run.dir)) {
+    t <- dfmmgq[run == run.dir[r], ][, scenario := names(run.dir[r])]
+    setcolorder(t, c("indicator", "run", "scenario", "delta"))
+    dlist[[names(run.dir[r])]] <- t
+  }
+  # export
+  do.call(paste0("export.allocation.", geo), list(dlist, geo.id))
+  
 }
 
 
 
-set.globals <- FALSE

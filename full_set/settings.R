@@ -8,14 +8,15 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
 )
 script.dir <- "/Users/hana/R/vision2050indicators/full_set" 
 
-run.dir <- c("iSTC" = "run_3.run_2018_08_17_13_06"#,
-             #"iDUG" = "run_1.run_2018_08_17_15_45", 
-             #"iH2O2" = "run_4.run_2018_08_17_16_15"#, 
+run.dir <- c("iSTC" = "run_3.run_2018_08_17_13_06",
+             "iDUG" = "run_1.run_2018_08_17_15_45", 
+             "iH2O2" = "run_4.run_2018_08_17_16_15"#, 
              #"TOD" = "run_3.run_2018_08_10_21_04"
              )  
 indicator.dirnm <- "indicators"
 data.dir <- "../data"
-
-set.globals <- TRUE
+data.dir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support/script_input"
+dsa.dir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support/Model_Output"
+#set.globals <- TRUE
 
 

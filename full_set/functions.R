@@ -30,8 +30,25 @@ get.military <- function(geog) {
     gather(contains("yr"), key = "year", value = "estimate") %>%
     filter(year %in% paste0("yr", c(2017, years))) %>%
     group_by_(.dots = dots) %>%
-    summarise(enlist_estimate = sum(estimate)) # %>%
+    summarise(estimate = sum(estimate))  #%>%
+    #summarise_(.dots = setNames(geog, "name_id"))
     #left_join(subarea.cnty.lu, by = "subarea_id")
   
   return(mil.df)
+}
+
+get.gq <- function(geog) {
+  # GQ population -----------------------------------------------------------
+  
+  # read GQ pop (incorporate to 2050 data)
+  gq.file <- read.xlsx(file.path(data.dir, "group-quarters.xlsx"), check.names = TRUE)
+  colnames(gq.file)[grep("^X\\d+", colnames(gq.file))] <- gsub("X", "yr", colnames(gq.file)[grep("^X\\d+", colnames(gq.file))])
+  #gq.cols <- c(geog, setNames(paste0("`", c(2017, years), "`"), "gq"))
+  gq.cols <- lapply(c(geog, "year"), as.symbol)
+  gq <- gq.file %>%
+    gather(contains("yr"), key = "year", value = "estimate") %>% 
+    filter(year %in% paste0("yr", c(2017, years))) %>%
+    group_by_(.dots = gq.cols) %>%
+    summarise(estimate = sum(estimate))
+  return(gq)
 }
