@@ -3,6 +3,8 @@ library(openxlsx)
 library(tidyverse)
 library(foreign)
 
+# settings --------------------------------------------------------------
+
 if(!exists("set.globals") || !set.globals) {
   curr.dir <- getwd()
   this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -11,11 +13,6 @@ if(!exists("set.globals") || !set.globals) {
   source("functions.R")
 }
 
-# settings --------------------------------------------------------------
-
-# curr.dir <- getwd()
-# this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
-# setwd(this.dir)
 source("all_runs.R")
 
 out.file.nm <- settings$goa$out.file.nm 
@@ -24,7 +21,8 @@ out.file.nm <- settings$goa$out.file.nm
 # base year actuals -------------------------------------------------------
 
 # total population and households (ofm)
-ofm.file.nm <- "J:/OtherData/OFM/SAEP/SAEP Extract_2017_10October03/requests/v2050/tract_population_households.csv"
+# ofm.file.nm <- "J:/OtherData/OFM/SAEP/SAEP Extract_2017_10October03/requests/v2050/tract_population_households.csv"
+ofm.file.nm <- file.path(data.dir, "tract_population_households.csv")
 byro.df <- read.csv(ofm.file.nm, stringsAsFactors = F) %>%
   mutate_at("GEOID10", as.character) %>%
   select(ends_with("10"), population_byr = contains("POP"), households_byr = contains("OHU"))
@@ -78,7 +76,8 @@ gq <- gq.file %>%
 
 # general -----------------------------------------------------------------
 
-og.comp.ind <- "Y:/VISION 2050/Data/Opportunity Mapping Update/Finalopportunity_analysis - Opportunity_Index_06062012_Region_.csv"
+# og.comp.ind <- "Y:/VISION 2050/Data/Opportunity Mapping Update/Finalopportunity_analysis - Opportunity_Index_06062012_Region_.csv"
+og.comp.ind <- file.path(data.dir, "Finalopportunity_analysis - Opportunity_Index_06062012_Region_.csv")
 
 tract.lu <- read.csv(file.path(data.dir, "tract_opportunity_lookup.csv"), stringsAsFactors = FALSE)
 

@@ -3,6 +3,8 @@ library(openxlsx)
 library(tidyverse)
 library(foreign)
 
+# settings --------------------------------------------------------------
+
 if(!exists("set.globals") || !set.globals) {
   curr.dir <- getwd()
   this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -11,11 +13,6 @@ if(!exists("set.globals") || !set.globals) {
   source("functions.R")
 }
 
-# settings --------------------------------------------------------------
-
-# curr.dir <- getwd()
-# this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
-# setwd(this.dir)
 source("all_runs.R")
 
 out.file.nm <- settings$pjta$out.file.nm 
@@ -38,14 +35,16 @@ ind.extension <- ".csv"
 # base year actuals -------------------------------------------------------
 
 # total population (tod2 blocksplits, does not sum to regional total)
-pop.file.nm <- "J:/Projects/Population/OFMPopHsgData/OFMSAEP/Custom_Ests/HHPop_est_Block_Spilt/tod2_V2050/est2017/tod_est2017.xlsx"
+# pop.file.nm <- "J:/Projects/Population/OFMPopHsgData/OFMSAEP/Custom_Ests/HHPop_est_Block_Spilt/tod2_V2050/est2017/tod_est2017.xlsx"
+pop.file.nm <- file.path(data.dir, "tod_est2017.xlsx")
 byro.df <- read.xlsx(pop.file.nm) %>%
   select(tod_id = bSecField, population_byr = splitblkTotpop) %>%
   group_by(tod_id) %>%
   summarise(population_byr = sum(population_byr))
 
 # add remaining population to tod_id = 0
-ofm.file.nm <- "J:/OtherData/OFM/SAEP/SAEP Extract_2017_10October03/requests/v2050/county.xlsx"
+# ofm.file.nm <- "J:/OtherData/OFM/SAEP/SAEP Extract_2017_10October03/requests/v2050/county.xlsx"
+ofm.file.nm <- file.path(data.dir, "county.xlsx")
 ofm <- read.xlsx(ofm.file.nm)
 ofm.cnty <- ofm %>% select(starts_with("POP"))
 ofm.region <- ofm.cnty %>% summarise_(.dots = setNames(paste0("sum(", paste0("POP", byr), ")"), "population_ofm"))
