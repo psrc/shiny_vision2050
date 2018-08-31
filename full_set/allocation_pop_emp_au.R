@@ -9,7 +9,6 @@ if(!exists("set.globals") || !set.globals) {
   source("settings.R")
   source("functions.R")
 }
-source("all_runs.R")
 
 years.col <- paste0("yr", years)
 years.to.keep <- paste0("yr", c(byr, years))

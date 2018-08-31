@@ -1,3 +1,5 @@
+library(openxlsx)
+
 rund <- "/Volumes/Model\ Data/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs"
 base <- list(Aws01 = file.path(rund, "awsmodel01"),
              Aws03 = file.path(rund, "awsmodel03"),
@@ -37,5 +39,10 @@ settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
                  jhr = list(out.file.nm = "18_jobs_housing_ratio"),
                  alloc = list(out.file.nm = "16_allocation_pop_emp_au"),
                  epden = list(out.file.nm.byr = "22_pop_emp_au_density",
-                               out.file.nm <- "29_pop_emp_au_density")
-)
+                               out.file.nm = "29_pop_emp_au_density"),
+                 gpro = list(out.file.nm.a = "28a_transit_proximity",
+                             out.file.nm.b = "28b_uga_proximity"             
+                              )
+          )
+source("../screening_factors/all_runs.R")
+
