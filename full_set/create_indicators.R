@@ -4,16 +4,20 @@ wrk.dir <- "/Users/hana/R/vision2050indicators/full_set"
 curr.dir <- getwd()
 setwd(wrk.dir)
 
+run.screening.factors <- FALSE
+
 # global settings
 source("settings.R")
 set.globals <- TRUE
 
 # run scripts
 source("functions.R")
-source("../screening_factors/jobs_housing_ratio.R") # 15, 18
-source("../screening_factors/housing_type_mix.R") # 17
-source("../screening_factors/growth_opp_areas.R") # 79
-source("../screening_factors/jobs_pop_tod_areas.R") # 30
+if(run.screening.factors) {
+  source("../screening_factors/jobs_housing_ratio.R") # 15, 18
+  source("../screening_factors/housing_type_mix.R") # 17
+  source("../screening_factors/growth_opp_areas.R") # 79
+  source("../screening_factors/jobs_pop_tod_areas.R") # 30
+}
 source("allocation_pop_emp_au.R") # 16
 source("pop_emp_density.R") # 22 & 29
 

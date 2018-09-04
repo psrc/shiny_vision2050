@@ -15,8 +15,8 @@ years.to.keep <- paste0("yr", c(byr, years))
 
 out.file.nm <- settings$alloc$out.file.nm
 
-geos <- c("city", "grid")
-#geos <- "grid"
+#geos <- c("city", "grid")
+geos <- "grid"
 attributes <- c("population", "employment", "activity_units")
 ind.extension <- ".csv"
 
@@ -81,7 +81,7 @@ export.allocation.grid <- function(data, geo.id) {
     df[, run := NULL]
     df <- dcast(df, name_id ~ indicator, value.var = "delta" )
     setnames(df, "name_id", geo.id)
-    write.csv(df, file.path(out.dir, "Maps", paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
+    write.csv(df, file.path(out.dir.maps, paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
               row.names = FALSE)
   }
 }

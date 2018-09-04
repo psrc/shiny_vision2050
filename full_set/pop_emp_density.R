@@ -48,9 +48,9 @@ for(scenario in names(dlist)) {
   df[, run := NULL]
   df <- dcast(df, name_id + year ~ indicator, value.var = "estimate" )
   setnames(df, "name_id", geo.id)
-  write.csv(df[year == "yr2017"][,year := NULL], file.path(out.dir, "Maps", paste0(out.file.nm.byr, "_grid_", scenario, "_", Sys.Date(), ".csv")),
+  write.csv(df[year == "yr2017"][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm.byr, "_grid_", scenario, "_", Sys.Date(), ".csv")),
               row.names = FALSE)
-  write.csv(df[year == years.col][,year := NULL], file.path(out.dir, "Maps", paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
+  write.csv(df[year == years.col][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
             row.names = FALSE)
 }
 
