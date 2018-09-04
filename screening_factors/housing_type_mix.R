@@ -76,12 +76,7 @@ for (r in 1:length(run.dir)) { # for each run
   setnames(df.cnty2.sum.delta, "delta", "sum_delta")
   df.cnty3 <- df.cnty2[df.cnty2.sum.delta, on = "county_id"
                        ]
-  # [county_id == 33, geography := "King"
-  #                        ][county_id == 35, geography := "Kitsap"
-  #                          ][county_id == 53, geography := "Pierce"
-  #                            ][county_id == 61, geography := "Snohomish"
-  #                              ][, county_id := NULL]
-  
+
   df.cnty3[, geography := switch(as.character(county_id), "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = county_id][, county_id := NULL]
   
   df.all <- rbindlist(list(df.cnty3, df), use.names = TRUE)
