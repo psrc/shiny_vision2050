@@ -122,7 +122,7 @@ region.fcast <- df.cnty[, lapply(.SD, sum), .SDcols = years.col, by = c("indicat
 region <- dcast.data.table(region.fcast, run ~ indicator, value.var = years.col)
 region[, `:=` (employment_byr = region.byr$employment_byr, 
                population_byr = region.byr$population_byr,
-               gq = gq$gq,
+               gq = sum(gq$gq),
                enlist_byr = mil.df2[year != years.col, enlist_estimate],
                enlist = mil.df2[year == years.col, enlist_estimate])
        ]
