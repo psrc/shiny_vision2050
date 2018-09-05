@@ -13,8 +13,9 @@ ind.types <- c("transit_buffer", "uga_buffer")
 attributes <- c("population", "employment", "activity_units")
 ind.extension <- ".csv"
 
-years.col <- paste0("yr", years)
-years.to.keep <- paste0("yr", c(byr, years))
+juris <- fread(file.path(data.dir, "Juris_Reporting.csv"))
+counties <- unique(juris[, .(countyID, county)])
+
 
 out.file.nm <- list(transit_buffer = settings$gpro$out.file.nm.a, # "28a_transit_proximity"
                     uga_buffer = settings$gpro$out.file.nm.b) # "28b_uga_proximity"
@@ -38,16 +39,19 @@ for(itype in ind.types) {
   dfmmgq <- dfm[milgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
   #dfmmgq <- dfm # delete this line after military is ready
   
+  dfmmgq <- merge(dfmmgq, counties, by.x = "name_id", by.y = "countyID")
+  
   # loop through each run and gather results
   dlist <- NULL
   for (r in 1:length(run.dir)) {
     t <- dfmmgq[run == run.dir[r], ]
     t[, run := NULL][, name_id := NULL]
     t[, year := gsub("yr", "", year)]
-    t <- dcast(t, year ~ indicator, value.var = "estimate")
+    t[, indicator := gsub(paste0("_", itype), "", indicator)]
+    t <- dcast(t, county  ~ indicator + year, value.var = "estimate")
     dlist[[names(run.dir[r])]] <- t
   }
   # export
-  write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm[[geo]], Sys.Date(), ".xlsx")))
+  write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm[[itype]], "_", Sys.Date(), ".xlsx")))
 
 }

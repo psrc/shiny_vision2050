@@ -46,7 +46,6 @@ settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
                  jhr = list(out.file.nm = "18_jobs_housing_ratio")
                  ) 
 
-
-
+source("all_runs.R")
 
 

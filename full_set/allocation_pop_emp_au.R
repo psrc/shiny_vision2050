@@ -10,13 +10,10 @@ if(!exists("set.globals") || !set.globals) {
   source("functions.R")
 }
 
-years.col <- paste0("yr", years)
-years.to.keep <- paste0("yr", c(byr, years))
-
 out.file.nm <- settings$alloc$out.file.nm
 
-#geos <- c("city", "grid")
-geos <- "grid"
+geos <- c("city", "grid")
+#geos <- "grid"
 attributes <- c("population", "employment", "activity_units")
 ind.extension <- ".csv"
 
@@ -29,13 +26,13 @@ read.actual.fips_rgs <- function(file) {
   alldf <- NULL
   for(ind in names(inds)) {
     df <- read.xlsx(file, sheet = ind, startRow = 2)
-    df <- df[, c("city_id", inds[[ind]][2])] %>% merge(cities[, c("city_id", "fips_rgs_id")]) %>% data.table 
-    setnames(df, inds[[ind]][2], "yr2017")
-    df <- df[, .(estimate = sum(yr2017)), by = .(fips_rgs_id)][, indicator := inds[[ind]][1]][, year := "yr2017"]
+    df <- df[, c("city_id", inds[[ind]][2])] %>% merge(cities[, c("city_id", "fips_rgs_proposed_id")]) %>% data.table 
+    setnames(df, inds[[ind]][2], "base_year")
+    df <- df[, .(estimate = sum(base_year)), by = .(fips_rgs_id)][, indicator := inds[[ind]][1]][, year := byr.col]
     alldf <- rbind(alldf, df)
   }
   au <- alldf[, .(estimate = sum(estimate)), by = .(fips_rgs_id)]
-  alldf <- rbind(alldf, au[, indicator := "activity_units"][, year := "yr2017"])
+  alldf <- rbind(alldf, au[, indicator := "activity_units"][, year := byr.col])
   setnames(alldf, "fips_rgs_id", "name_id")
   return(alldf)
 }
@@ -46,12 +43,12 @@ read.actual.city <- function(file) {
   for(ind in names(inds)) {
     df <- read.xlsx(file, sheet = ind, startRow = 2)
     df <- df[, c("city_id", inds[[ind]][2])] %>% data.table 
-    setnames(df, inds[[ind]][2], "yr2017")
-    df <- df[, .(estimate = sum(yr2017)), by = .(city_id)][, indicator := inds[[ind]][1]][, year := "yr2017"]
+    setnames(df, inds[[ind]][2], "base_year")
+    df <- df[, .(estimate = sum(base_year)), by = .(city_id)][, indicator := inds[[ind]][1]][, year := byr.col]
     alldf <- rbind(alldf, df)
   }
   au <- alldf[, .(estimate = sum(estimate)), by = .(city_id)]
-  alldf <- rbind(alldf, au[, indicator := "activity_units"][, year := "yr2017"])
+  alldf <- rbind(alldf, au[, indicator := "activity_units"][, year := byr.col])
   setnames(alldf, "city_id", "name_id")
   return(alldf)
 }
@@ -98,7 +95,7 @@ for(geo in geos) {
   
   if(geo != "grid") { # replace modelled with actual
     actual <- do.call(paste0("read.actual.", geo), list(file.name.actual[[geo]]))
-    dfm <- dfm[year != "yr2017",] # remove modelled current year
+    dfm <- dfm[year != byr.col,] # remove modelled current year
     # replace with actual for all runs
     for(r in unique(dfm$run)) 
       dfm <- rbind(dfm, actual[, run := r])
@@ -110,7 +107,7 @@ for(geo in geos) {
   dfmmgq <- dfm[milgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
   
   # compute difference between end year and 2017
-  dfmmgq[dfmmgq[year == "yr2017"], delta := round(estimate - i.estimate), on = c("name_id", "run", "indicator")]
+  dfmmgq[dfmmgq[year == byr.col], delta := round(estimate - i.estimate), on = c("name_id", "run", "indicator")]
   dfmmgq <- dfmmgq[year == years.col][, year := NULL][, estimate := NULL]
   
   # loop through each run

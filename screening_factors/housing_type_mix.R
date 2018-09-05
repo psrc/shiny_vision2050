@@ -11,7 +11,6 @@ if(!exists("set.globals") || !set.globals) {
   source("functions.R")
 }
 
-source("all_runs.R")
 
 out.file.nm <- settings$htm$out.file.nm
 

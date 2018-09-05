@@ -9,9 +9,6 @@ if(!exists("set.globals") || !set.globals) {
   source("functions.R")
 }
 
-years.col <- paste0("yr", years)
-years.to.keep <- paste0("yr", c(byr, years))
-
 out.file.nm.byr <- settings$epden$out.file.nm.byr # "22_pop_emp_au_density"
 out.file.nm <- settings$epden$out.file.nm # "29_pop_emp_au_density"
 
@@ -48,10 +45,10 @@ for(scenario in names(dlist)) {
   df[, run := NULL]
   df <- dcast(df, name_id + year ~ indicator, value.var = "estimate" )
   setnames(df, "name_id", geo.id)
-  write.csv(df[year == "yr2017"][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm.byr, "_grid_", scenario, "_", Sys.Date(), ".csv")),
+  write.csv(df[year == byr.col][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm.byr, "_grid_", scenario, "_", Sys.Date(), ".csv")),
               row.names = FALSE)
   write.csv(df[year == years.col][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
-            row.names = FALSE)
+              row.names = FALSE)
 }
 
 cat("\n")

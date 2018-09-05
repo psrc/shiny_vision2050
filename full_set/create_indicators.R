@@ -20,6 +20,7 @@ if(run.screening.factors) {
 }
 source("allocation_pop_emp_au.R") # 16
 source("pop_emp_density.R") # 22 & 29
+#source("growth_proximity.R") # 28a & 28b
 
 # cleanup
 rm(set.globals)
