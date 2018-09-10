@@ -173,19 +173,22 @@ df6.sep <- df6.melt %>%
 
 delta.expr <- parse(text = paste0("delta := ", years.col, " - byr"))
 sdcols <- c("byr", years.col)
-
+share.cols <- paste0(sdcols, "_share_in_tod")
+share.byr.expr <- parse(text = paste0(share.cols[1], ":= byr_tod/byr_region"))
+share.fcast.expr <- parse(text = paste0(share.cols[2], ":=", paste0(years.col, "_tod"), "/", paste0(years.col, "_region")))
+  
 df7 <- df6.sep[, eval(delta.expr)]
 
 df7.cast <- dcast.data.table(df7, run + indicator ~ name_id, value.var = c("byr", "yr2050", "delta"))
-df7.cast[, share_delta_in_tod := delta_tod/delta_region]
+df7.cast[, delta_share_in_tod := delta_tod/delta_region][, eval(share.byr.expr)][, eval(share.fcast.expr)]
 
 # loop through each run
 dlist <- NULL
 fincols <- c("tod", "region")
 for (r in 1:length(run.dir)) {
   t <- NULL
-  t <- df7.cast[run == run.dir[r], ][, scenario := names(run.dir[r])]
-  setcolorder(t, c("run", "scenario", "indicator", paste0("byr_", fincols), paste0(years.col, "_", fincols), paste0("delta_", fincols), "share_delta_in_tod"))
+  t <- df7.cast[run == run.dir[r], ][, scenario := names(run.dir[r])][order(-indicator)]
+  setcolorder(t, c("run", "scenario", "indicator", paste0("byr_", fincols), share.cols[1], paste0(years.col, "_", fincols), share.cols[2], paste0("delta_", fincols), "delta_share_in_tod"))
   dlist[[names(run.dir[r])]] <- t
 }
 
