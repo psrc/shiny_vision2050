@@ -189,6 +189,7 @@ for (r in 1:length(run.dir)) {
   t <- NULL
   t <- df7.cast[run == run.dir[r], ][, scenario := names(run.dir[r])][order(-indicator)]
   setcolorder(t, c("run", "scenario", "indicator", paste0("byr_", fincols), share.cols[1], paste0(years.col, "_", fincols), share.cols[2], paste0("delta_", fincols), "delta_share_in_tod"))
+  colnames(t)[grep("byr", colnames(t))] <- str_replace_all(colnames(t)[grep("byr", colnames(t))], "byr", paste0("yr", byr))
   dlist[[names(run.dir[r])]] <- t
 }
 

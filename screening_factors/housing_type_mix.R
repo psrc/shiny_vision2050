@@ -86,7 +86,7 @@ for (r in 1:length(run.dir)) { # for each run
                  ][, eval(share.expr2)]
 
   setcolorder(df.all, c("geography", "run", "scenario", "res_density_type", cols[2], cols[1], rev(tot.cols), rev(share.cols), "delta", "sum_delta", "share_delta"))
-  
+  colnames(df.all)[grep("residential_units$", colnames(df.all))] <- str_replace_all(colnames(df.all)[grep("residential_units$", colnames(df.all))], "residential_units$", paste0("residential_units_yr", years))
   
   dlist[[names(run.dir[r])]] <- df.all
 }

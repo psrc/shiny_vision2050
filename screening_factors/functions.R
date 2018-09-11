@@ -5,7 +5,7 @@ compile.tbl <- function(geog, allruns, run.dir, attributes, ind.extension) {
     base.dir <- purrr::pluck(allruns, run.dir[r])
     for (a in 1:length(attributes)) { # for each attribute
       filename <- paste0(geog,'__',"table",'__',attributes[a], ind.extension)
-      datatable <- read.csv(file.path(base.dir, "indicators", filename), header = TRUE, sep = ",")
+      datatable <- fread(file.path(base.dir, "indicators", filename), header = TRUE, sep = ",")
       colnames(datatable)[2: ncol(datatable)] <- str_replace(colnames(datatable)[2: ncol(datatable)], '\\w+_', 'yr') # rename columns
       colnames(datatable)[1] <- str_replace(colnames(datatable)[1], '\\w+_', 'name_')
       datatable$indicator <- attributes[a]

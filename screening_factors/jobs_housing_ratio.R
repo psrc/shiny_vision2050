@@ -130,9 +130,11 @@ for (r in 1:length(run.dir)) {
   ind.expr <- parse(text = paste0(paste0("ehindex_", years.col), ":=", paste0("ehratio_", years.col), "/t[subarea_name == 'Region', ", paste0("ehratio_", years.col), "]"))
   t <- d3[run == run.dir[r],]
   t[, `:=` (ehindex_byr = (ehratio_byr/(t[subarea_name == "Region", ehratio_byr])))][, eval(ind.expr)][, scenario := names(run.dir[r])]
-  roworder <- c("King", geo.cols[2:length(geo.cols)], "Region")
+  # roworder <- c("King", geo.cols[2:length(geo.cols)], "Region")
+  roworder <- c("King", "Sea-Shore", "South King", "East King", "Kitsap", "Pierce", "Snohomish", "Region")
   t2 <- t[match(roworder, t$subarea_name)]
   setcolorder(t2, c("cnty_name", "subarea_name", "run", "scenario", paste0(new.attributes, "_byr"), paste0(new.attributes, "_", years.col), paste0("ehratio_", c("byr", years.col)), grep("ehindex", colnames(t2), value = T)))
+  colnames(t2)[grep("byr", colnames(t2))] <- str_replace_all(colnames(t2)[grep("byr", colnames(t2))], "byr", paste0("yr", byr))
   dlist[[names(run.dir[r])]] <- t2
 }
 

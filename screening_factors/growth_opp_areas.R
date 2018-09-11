@@ -160,8 +160,10 @@ df9 <- df8.bind[region.sums, on = c("indicator", "run")
                    ][, eval(share.expr2)
                      ][, share_delta := delta/sum_delta
                        ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
-                         ][order(indicator, Comp.Index.sort)
-                           ][, Comp.Index.sort := NULL]
+                         ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
+                           ][order(indicator.sort, Comp.Index.sort)
+                             ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL)
+                               ]
 
 
 # loop through each run
@@ -170,7 +172,8 @@ for (r in 1:length(run.dir)) {
   t <- NULL
   t <- df9[run == run.dir[r], ][, scenario := names(run.dir[r])]
   setcolorder(t, c("indicator", "Comp.Index", "run", "scenario", sdcols, sumcols, sharecols, grep("delta", colnames(t), value = TRUE)))
-  setnames(t, c("Comp.Index", "byr"), c("index", paste0("byr", byr))) 
+  setnames(t, c("Comp.Index"), c("index"))
+  colnames(t)[grep("byr", colnames(t))] <- str_replace_all(colnames(t)[grep("byr", colnames(t))], "byr", paste0("yr", byr))
   dlist[[names(run.dir[r])]] <- t
 }
 
