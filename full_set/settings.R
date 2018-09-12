@@ -22,7 +22,7 @@ indicator.dirnm <- "indicators"
 #data.dir <- "../data"
 data.dir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support/script_input"
 out.dir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support/Model_Output/Working"
-out.dir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support/Model_Output/"
+#out.dir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support/Model_Output/"
 #out.dir <- "~/R/vision2050indicators/tests"
 out.dir.maps <- file.path(out.dir, "Maps")
 # data.dir <- "J:/Projects/V2050/SEIS/Data_Support/script_input"
@@ -39,8 +39,8 @@ enlist.lu <- read.xlsx(file.path(data.dir, enlist.lu.nm))
 
 enlist.mil.file.nm <- "enlisted_personnel_SoundCast_08202018.csv"
 
-gq.file.nm <- "group-quarters_original.xlsx" # does not have buffer ids -> will not work with 28a,b
-#gq.file.nm <- "group_quarters_geo.xlsx" 
+#gq.file.nm <- "group-quarters_original.xlsx" # does not have buffer ids -> will not work with 28a,b
+gq.file.nm <- "group_quarters_geo.xlsx" 
 
 gq.file <- read.xlsx(file.path(data.dir, gq.file.nm)) # for Christy's scripts
 gq.file2 <- read.xlsx(file.path(data.dir, gq.file.nm), check.names = TRUE) # for Hana's scripts
@@ -55,7 +55,9 @@ settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
                                out.file.nm = "29_pop_emp_au_density"),
                  gpro = list(out.file.nm.a = "28a_transit_proximity",
                              out.file.nm.b = "28b_uga_proximity"             
-                              )
+                              ),
+		park = list(out.file.nm = "64_buffered_parks"),
+		gamn = list(out.file.nm = "31_growth_amentities")
           )
 source("../screening_factors/all_runs.R")
 
