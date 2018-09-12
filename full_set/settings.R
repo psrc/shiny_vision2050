@@ -11,10 +11,10 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
              Aws07 = file.path(rund, "awsmodel07")
             )
 script.dir <- "/Users/hana/R/vision2050indicators/full_set"
-run.dir <- c("STC" = "run_3.run_2018_08_17_13_06",
-             "DUG" = "run_1.run_2018_08_17_15_45", 
-             "H2O2" = "run_4.run_2018_08_17_16_15",
-             "TODtd" = "run_9.run_2018_08_30_22_08"
+run.dir <- c("STC" = "run_3.run_2018_08_17_13_06"#,
+             #"DUG" = "run_1.run_2018_08_17_15_45", 
+             #"H2O2" = "run_4.run_2018_08_17_16_15",
+             #"TODtd" = "run_9.run_2018_08_30_22_08"
              #"TODprelim" = "run_3.run_2018_08_10_21_04"
              ) 
 
@@ -22,7 +22,9 @@ indicator.dirnm <- "indicators"
 #data.dir <- "../data"
 data.dir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support/script_input"
 out.dir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support/Model_Output/Working"
-out.dir.maps <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support/Model_Output/Maps"
+out.dir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support/Model_Output/"
+#out.dir <- "~/R/vision2050indicators/tests"
+out.dir.maps <- file.path(out.dir, "Maps")
 # data.dir <- "J:/Projects/V2050/SEIS/Data_Support/script_input"
 # out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Model_Output/Working"
 
@@ -38,7 +40,8 @@ enlist.lu <- read.xlsx(file.path(data.dir, enlist.lu.nm))
 enlist.mil.file.nm <- "enlisted_personnel_SoundCast_08202018.csv"
 
 gq.file.nm <- "group-quarters_original.xlsx" # does not have buffer ids -> will not work with 28a,b
-#gq.file.nm <- "group-quarters.xlsx" 
+#gq.file.nm <- "group_quarters_geo.xlsx" 
+
 gq.file <- read.xlsx(file.path(data.dir, gq.file.nm)) # for Christy's scripts
 gq.file2 <- read.xlsx(file.path(data.dir, gq.file.nm), check.names = TRUE) # for Hana's scripts
 colnames(gq.file2)[grep("^X\\d+", colnames(gq.file2))] <- gsub("X", "yr", colnames(gq.file2)[grep("^X\\d+", colnames(gq.file2))])

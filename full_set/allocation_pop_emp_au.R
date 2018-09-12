@@ -2,6 +2,7 @@
 
 library(data.table)
 library(openxlsx)
+library(foreign)
 
 if(!exists("set.globals") || !set.globals) {
   script.dir <- "/Users/hana/R/vision2050indicators/full_set" 
@@ -13,7 +14,7 @@ if(!exists("set.globals") || !set.globals) {
 out.file.nm <- settings$alloc$out.file.nm
 
 geos <- c("city", "grid")
-#geos <- "grid"
+geos <- "grid"
 attributes <- c("population", "employment", "activity_units")
 ind.extension <- ".csv"
 
@@ -72,14 +73,20 @@ export.allocation.city <- function(data, ...) {
   write.xlsx(tbls, file.path(out.dir, paste0(out.file.nm, "_city_fips_", Sys.Date(), ".xlsx")))
 }
 
-export.allocation.grid <- function(data, geo.id) {
+export.allocation.grid <- function(data, geo.id, remove.zero = TRUE) {
   for(scenario in names(data)) {
     df <- copy(data[[scenario]])
     df[, run := NULL]
+    if(remove.zero)
+      df <- df[delta != 0, ]
     df <- dcast(df, name_id ~ indicator, value.var = "delta" )
     setnames(df, "name_id", geo.id)
-    write.csv(df, file.path(out.dir.maps, paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
-              row.names = FALSE)
+    filename <- paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date())
+    fwrite(df, file.path(out.dir.maps, paste0(filename, ".csv")), row.names = FALSE)
+    dbf.dir <- file.path(out.dir.maps, "dbf")
+    if(!dir.exists(dbf.dir))
+      dir.create((dbf.dir))
+    write.dbf(df, file.path(dbf.dir, paste0(filename, ".dbf")))
   }
 }
 
