@@ -25,7 +25,7 @@ dfm <- data.table::melt(alldata,
                         id.vars = c("name_id", "run", "indicator"),
                         measure.vars = grep("yr", colnames(alldata), value = TRUE),
                         variable.name = "year", value.name = "estimate")
-dfm <- dfm[year %in% years.to.keep]
+dfm <- dfm[year %in% fs.years.to.keep]
 # add military and GQ
 milgq <- compile.mil.gq(geo.id)
 dfmmgq <- dfm[milgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
@@ -45,9 +45,9 @@ for(scenario in names(dlist)) {
   df[, run := NULL]
   df <- dcast(df, name_id + year ~ indicator, value.var = "estimate" )
   setnames(df, "name_id", geo.id)
-  write.csv(df[year == byr.col][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm.byr, "_grid_", scenario, "_", Sys.Date(), ".csv")),
+  write.csv(df[year == fs.byr.col][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm.byr, "_grid_", scenario, "_", Sys.Date(), ".csv")),
               row.names = FALSE)
-  write.csv(df[year == years.col][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
+  write.csv(df[year == fs.years.col][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
               row.names = FALSE)
 }
 

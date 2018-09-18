@@ -18,13 +18,14 @@ counties <- unique(juris[, .(countyID, county)])
 
 out.file.nm <- list(transit_buffer = settings$gpro$out.file.nm.a, # "28a_transit_proximity"
                     uga_buffer = settings$gpro$out.file.nm.b, # "28b_uga_proximity"
-		    park_buffer = settings$park$out.file.nm,  # "64_buffered_parks"
-		    growth_amenities = settings$gamn$out.file.nm # "31_growth_amentities"
-		    )
+		                park_buffer = settings$park$out.file.nm,  # "64_buffered_parks"
+		                growth_amenities = settings$gamn$out.file.nm # "31_growth_amentities"
+		                )
 all_attrs <- list(transit_buffer = c("population", "employment", "activity_units"),
-	     	  uga_buffer = c("population", "employment", "activity_units"),
-		  park_buffer = c("population", "employment"),
-		  growth_amenities = "households")
+	     	          uga_buffer = c("population", "employment", "activity_units"),
+		              park_buffer = c("population", "employment"),
+		              growth_amenities = "population"
+		              )
 ind.types <- names(all_attrs)
 #ind.types <- "uga_buffer"
 
@@ -39,7 +40,7 @@ for(itype in ind.types) {
                           id.vars = c("name_id", "run", "indicator"),
                           measure.vars = grep("yr", colnames(alldata), value = TRUE),
                           variable.name = "year", value.name = "estimate")
-  dfm <- dfm[year %in% years.to.keep & name_id > 0]
+  dfm <- dfm[year %in% fs.years.to.keep & name_id > 0]
   
   # add military and GQ
   filter <- list( quo(`==`(!!sym(paste0(itype, "_id")), 1))) # filter records with buffer_id being one
