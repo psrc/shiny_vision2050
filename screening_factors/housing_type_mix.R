@@ -40,45 +40,46 @@ for (r in 1:length(run.dir)) { # for each run
   # pcl[constr[constraint_type == "far"], max_nonres_density := i.max_dens, on = "plan_type_id"]
   
   # categorize into three groups
-  pcl[, res_density_type := factor(ifelse(max_res_density < density.split$res[1], "low",
-                                          ifelse(max_res_density >= density.split$res[2], "high", "med")),
-                                   levels = c("low", "med", "high"))]
+  pcl[, `:=` (real_residential_units = pmax(residential_units, households), 
+              res_density_type = factor(ifelse(max_res_density < density.split$res[1], "low", 
+                                               ifelse(max_res_density >= density.split$res[2], "high", "med")), levels = c("low", "med", "high")))]
   # pcl[, nonres_density_type := factor(ifelse(max_nonres_density < density.split$nonres[1], "low",
   #                                            ifelse(max_nonres_density >= density.split$nonres[2], "high", "med")),
   #                                     levels = c("low", "med", "high"))]
   
-  cols <- c("residential_units", "residential_units_base")
+  cols <- c("real_residential_units", "residential_units_base")
   tot.cols <- paste0("sum_", cols)
   share.cols <- paste0("share_", cols)
   share.expr1 <- parse(text = paste0(share.cols[2], ":=", cols[2], "/", tot.cols[2]))
   share.expr2 <- parse(text = paste0(share.cols[1], ":=", cols[1], "/", tot.cols[1]))
-
+  
   # region
-  df <- pcl[!is.na(res_density_type), lapply(.SD, sum), .SDcols = cols, by = "res_density_type"][order(res_density_type)]
-  tot.reg <- df[, lapply(.SD, sum), .SDcols = cols][, res_density_type := "total"]
-  df[, (tot.cols[2]) := tot.reg$residential_units_base
-     ][,(tot.cols[1]) := tot.reg$residential_units
-       ][, delta := residential_units - residential_units_base
-         ][, sum_delta := sum(delta)
-           ][, geography := "Region"]
-
+  compile.region <- function(table) {
+    df <- table[!is.na(res_density_type), lapply(.SD, sum), .SDcols = cols, by = "res_density_type"][order(res_density_type)]
+    tot <- df[, lapply(.SD, sum), .SDcols = cols][, res_density_type := "total"]
+    df[, (tot.cols[2]) := tot$residential_units_base
+       ][,(tot.cols[1]) := tot$real_residential_units
+         ][, delta := real_residential_units - residential_units_base
+           ][, sum_delta := sum(delta)
+             ][, geography := "Region"]
+  }
+  
   # county
-  df.cnty <- pcl[!is.na(res_density_type), lapply(.SD, sum), .SDcols = cols, by = .(county_id, res_density_type)][order(county_id, res_density_type)]
-  tot.cnty <- df.cnty[, lapply(.SD, sum), .SDcols = cols, by = county_id][, `:=` (res_density_type = "total")]
-  
-  tot.cnty2 <- tot.cnty[, 1:3]
-  setnames(tot.cnty2, cols, tot.cols)
-  
-  df.cnty2 <- df.cnty[tot.cnty2, on = "county_id"
-                       ][, delta := residential_units - residential_units_base]
-  df.cnty2.sum.delta <- df.cnty2[, lapply(.SD, sum), .SDcols = "delta", by = county_id]
-  setnames(df.cnty2.sum.delta, "delta", "sum_delta")
-  df.cnty3 <- df.cnty2[df.cnty2.sum.delta, on = "county_id"
-                       ]
+  compile.cnty <- function(table) {
+    df <- table[!is.na(res_density_type), lapply(.SD, sum), .SDcols = cols, by = .(county_id, res_density_type)][order(county_id, res_density_type)]
+    tot <- df[, lapply(.SD, sum), .SDcols = cols, by = county_id]
+    setnames(tot, cols, tot.cols)
+    df2 <- df[tot, on = "county_id"][, delta := real_residential_units - residential_units_base]
+    df2.sum.delta <- df2[, lapply(.SD, sum), .SDcols = "delta", by = county_id]
+    setnames(df2.sum.delta, "delta", "sum_delta")
+    df3 <- df2[df2.sum.delta, on = "county_id"
+               ][, geography := switch(as.character(county_id), "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = county_id
+                 ][, county_id := NULL]
+  }
 
-  df.cnty3[, geography := switch(as.character(county_id), "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = county_id][, county_id := NULL]
-  
-  df.all <- rbindlist(list(df.cnty3, df), use.names = TRUE)
+  df.cnty <-compile.cnty(pcl)
+  df.reg <- compile.region(pcl)
+  df.all <- rbindlist(list(df.cnty, df.reg), use.names = TRUE)
   
   df.all[, share_delta := delta/sum_delta
              ][, `:=` (run = run.dir[r], scenario = names(run.dir[r]))
