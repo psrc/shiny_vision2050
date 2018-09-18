@@ -11,10 +11,10 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
              Aws07 = file.path(rund, "awsmodel07")
             )
 script.dir <- "/Users/hana/R/vision2050indicators/full_set"
-run.dir <- c("STC" = "run_3.run_2018_08_17_13_06"#,
-             #"DUG" = "run_1.run_2018_08_17_15_45", 
-             #"H2O2" = "run_4.run_2018_08_17_16_15",
-             #"TODtd" = "run_9.run_2018_08_30_22_08"
+run.dir <- c("STC" = "run_3.run_2018_08_17_13_06",
+             "DUG" = "run_1.run_2018_08_17_15_45", 
+             "H2O2" = "run_4.run_2018_08_17_16_15",
+             "TODtd" = "run_9.run_2018_08_30_22_08"
              #"TODprelim" = "run_3.run_2018_08_10_21_04"
              ) 
 
@@ -35,26 +35,27 @@ years.col <- paste0("yr", years)
 byr.col <- paste0("yr", byr)
 years.to.keep <- c(byr.col, years.col)
 
-# make these settings because the previous ones can get overwritten in the screening factors scripts
+# These settings are needed because the ones above can get overwritten by the screening factors scripts
 fs.years <- years
 fs.byr <- byr
 fs.years.col <- years.col
 fs.byr.col <- byr.col
 fs.years.to.keep <- years.to.keep
 
+# military employment
 enlist.lu.nm <- "enlisted_personnel_geo.xlsx"
 enlist.lu <- read.xlsx(file.path(data.dir, enlist.lu.nm))
 
 enlist.mil.file.nm <- "enlisted_personnel_SoundCast_08202018.csv"
 
-gq.file.nm <- "group-quarters_original.xlsx" # does not have buffer ids -> will not work with 28a,b
-gq.file.nm.sup <- "group_quarters_geo.xlsx" # contains additional geographies
-
+# group quarters
 process.colnames <- function(df){
   colnames(df)[grep("^X\\d+", colnames(df))] <- gsub("X", "yr", colnames(df)[grep("^X\\d+", colnames(df))])
   df
 }
-  
+gq.file.nm <- "group-quarters_original.xlsx" # does not have buffer ids -> will not work with 28a,b
+gq.file.nm.sup <- "group_quarters_geo.xlsx" # contains additional geographies
+
 gq.file <- read.xlsx(file.path(data.dir, gq.file.nm)) # for Christy's scripts
 gq.file2 <- read.xlsx(file.path(data.dir, gq.file.nm), check.names = TRUE) # for Hana's scripts
 gq.file2 <- process.colnames(gq.file2)
@@ -65,6 +66,7 @@ gq.file.sup <- process.colnames(gq.file.sup)
 miscols <- setdiff(colnames(gq.file.sup), colnames(gq.file2))
 gq.file2 <- merge(gq.file2, gq.file.sup[, c("record", miscols)], by = "record")
 
+# Script-specific settings
 settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
                  htm = list(out.file.nm = "17_housing_type_mix"),
                  pjta = list(out.file.nm = "30_jobs_pop_tod_areas"),
@@ -77,5 +79,7 @@ settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
 		            park = list(out.file.nm = "64_buffered_parks"),
 		            gamn = list(out.file.nm = "31_growth_amentities")
             )
+
+# assigns directories to runs
 source("../screening_factors/all_runs.R")
 
