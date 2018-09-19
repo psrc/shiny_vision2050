@@ -26,7 +26,7 @@ bdir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support"
 
 data.dir <- file.path(bdir, "script_input")
 out.dir <- file.path(bdir, "Model_Output/Working")
-#out.dir <- file.path(bdir, "Model_Output") # for final outputs 
+out.dir <- file.path(bdir, "Model_Output") # for final outputs 
 out.dir.maps <- file.path(out.dir, "Maps")
 
 years <- c(2050)
