@@ -3,7 +3,7 @@
 library(data.table)
 
 if(!exists("set.globals") || !set.globals) {
-  script.dir <- "/Users/hana/R/vision2050indicators/full_set" 
+  script.dir <- "/Users/hana/R/vision2050indicators/full_set"
   setwd(script.dir)
   source("settings.R")
   source("functions.R")
@@ -12,7 +12,8 @@ if(!exists("set.globals") || !set.globals) {
 out.file.nm.byr <- settings$epden$out.file.nm.byr # "22_pop_emp_au_density"
 out.file.nm <- settings$epden$out.file.nm # "29_pop_emp_au_density"
 
-geos <- "grid"
+# geos <- "grid"
+geo <- "hex" 
 
 attributes <- c("population", "employment", "activity_units")
 ind.extension <- ".csv"
@@ -29,26 +30,30 @@ dfm <- dfm[year %in% fs.years.to.keep]
 # add military and GQ
 milgq <- compile.mil.gq(geo.id)
 dfmmgq <- dfm[milgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
-dfmmgq[, estimate := estimate / 5.56] # gridcell has 5.56 acres
+dfmmgq[, estimate := estimate / 90] # gridcell has 5.56 acres, hex has 90 acres
 
 # loop through each run
 dlist <- NULL
 for (r in 1:length(run.dir)) {
   t <- dfmmgq[run == run.dir[r], ]
   setcolorder(t, c("indicator", "run", "estimate"))
+  # setcolorder(t, c("name_id", "indicator", "run", "year", "estimate"))
   dlist[[names(run.dir[r])]] <- t
 }
 
 # export
+dbf.dir <- file.path(out.dir.maps, "dbf")
 for(scenario in names(dlist)) {
   df <- copy(dlist[[scenario]])
   df[, run := NULL]
   df <- dcast(df, name_id + year ~ indicator, value.var = "estimate" )
   setnames(df, "name_id", geo.id)
-  write.csv(df[year == fs.byr.col][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm.byr, "_grid_", scenario, "_", Sys.Date(), ".csv")),
-              row.names = FALSE)
-  write.csv(df[year == fs.years.col][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
-              row.names = FALSE)
+  # write.csv(df[year == fs.byr.col][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm.byr, "_grid_", scenario, "_", Sys.Date(), ".csv")),
+  #             row.names = FALSE)
+  # write.csv(df[year == fs.years.col][,year := NULL], file.path(out.dir.maps, paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date(), ".csv")),
+  #             row.names = FALSE)
+  write.dbf(df[year == fs.byr.col][,year := NULL], file.path(dbf.dir, paste0(out.file.nm.byr, "_", geo, "_", scenario, "_", Sys.Date(), ".dbf")))
+  write.dbf(df[year == fs.years.col][,year := NULL], file.path(dbf.dir, paste0(out.file.nm, "_", geo, "_", scenario, "_", Sys.Date(), ".dbf")))
 }
 
 cat("\n")

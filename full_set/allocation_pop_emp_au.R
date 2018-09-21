@@ -5,7 +5,7 @@ library(openxlsx)
 library(foreign)
 
 if(!exists("set.globals") || !set.globals) {
-  script.dir <- "/Users/hana/R/vision2050indicators/full_set" 
+  script.dir <- "/Users/hana/R/vision2050indicators/full_set"
   setwd(script.dir)
   source("settings.R")
   source("functions.R")
@@ -13,8 +13,8 @@ if(!exists("set.globals") || !set.globals) {
 
 out.file.nm <- settings$alloc$out.file.nm
 
-geos <- c("city", "grid") # city is actually aggregated to fips_rgs
-#geos <- "grid"
+geos <- c("city", "hex") # city is actually aggregated to fips_rgs
+# geos <- "hex"
 attributes <- c("population", "employment", "activity_units")
 ind.extension <- ".csv"
 
@@ -51,6 +51,11 @@ transform2density.if.needed.grid <- function(df) {
   df
 }
 
+transform2density.if.needed.hex <- function(df) {
+  df[ , delta := round(delta /90, 2)]
+  df
+}
+
 export.allocation.city <- function(data, ...) {
   juris <- fread(file.path(data.dir, "Juris_Reporting.csv"))
   setnames(juris, "CityID", "name_id")
@@ -66,7 +71,7 @@ export.allocation.city <- function(data, ...) {
   write.xlsx(tbls, file.path(out.dir, paste0(out.file.nm, "_city_fips_", Sys.Date(), ".xlsx")))
 }
 
-export.allocation.grid <- function(data, geo.id, remove.zero = TRUE) {
+allocation.gis <- function(data, geo.id, geo, remove.zero = TRUE) {
   for(scenario in names(data)) {
     df <- copy(data[[scenario]])
     df[, run := NULL]
@@ -74,7 +79,7 @@ export.allocation.grid <- function(data, geo.id, remove.zero = TRUE) {
       df <- df[delta != 0, ]
     df <- dcast(df, name_id ~ indicator, value.var = "delta" )
     setnames(df, "name_id", geo.id)
-    filename <- paste0(out.file.nm, "_grid_", scenario, "_", Sys.Date())
+    filename <- paste0(out.file.nm, "_", geo, "_", scenario, "_", Sys.Date())
     fwrite(df, file.path(out.dir.maps, paste0(filename, ".csv")), row.names = FALSE)
     dbf.dir <- file.path(out.dir.maps, "dbf")
     if(!dir.exists(dbf.dir))
@@ -83,6 +88,13 @@ export.allocation.grid <- function(data, geo.id, remove.zero = TRUE) {
   }
 }
 
+export.allocation.grid <- function(data, geo.id, geo, remove.zero = TRUE) {
+  allocation.gis(data, geo.id, geo, remove.zero = TRUE)
+}
+
+export.allocation.hex <- function(data, geo.id, geo, remove.zero = TRUE) {
+  allocation.gis(data, geo.id, geo, remove.zero = TRUE)
+}
 
 for(geo in geos) {
   cat("\nComputing indicator 16 for ", geo, " geography")
@@ -93,7 +105,7 @@ for(geo in geos) {
                           measure.vars = grep("yr", colnames(alldata), value = TRUE),
                           variable.name = "year", value.name = "estimate")
   
-  if(geo != "grid") { # replace modelled with actual
+  if(geo != "grid" && geo != "hex") { # replace modelled with actual
     actual <- do.call(paste0("read.actual.", geo), list(file.name.actual[[geo]]))
     dfm <- dfm[year != fs.byr.col,] # remove modelled current year
     # replace with actual for all runs
@@ -117,10 +129,11 @@ for(geo in geos) {
   for (r in 1:length(run.dir)) {
     t <- dfmmgq[run == run.dir[r], ]
     setcolorder(t, c("indicator", "run", "delta"))
+    # setcolorder(t, c("name_id", "indicator", "run", "delta"))
     dlist[[names(run.dir[r])]] <- t
   }
   # export
-  do.call(paste0("export.allocation.", geo), list(dlist, geo.id))
+  do.call(paste0("export.allocation.", geo), list(dlist, geo.id, geo))
   cat("\n")
 }
 
