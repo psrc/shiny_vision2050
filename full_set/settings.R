@@ -8,13 +8,14 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
              Aws04 = file.path(rund, "awsmodel04"),
              Aws05 = file.path(rund, "awsmodel05"),
              Aws06 = file.path(rund, "awsmodel06"),
-             Aws07 = file.path(rund, "awsmodel07")
+             Aws07 = file.path(rund, "awsmodel07"),
+             Aws07 = file.path(rund, "awsmodel08")
             )
 script.dir <- "/Users/hana/R/vision2050indicators/full_set"
 run.dir <- c("STC" = "run_3.run_2018_08_17_13_06",
-             "DUG" = "run_1.run_2018_08_17_15_45", 
-             "H2O2" = "run_4.run_2018_08_17_16_15",
-             "TODtd" = "run_9.run_2018_08_30_22_08"
+             "DUGb" = "run_4.run_2018_10_02_11_57", 
+             "H2O2" = "run_6.run_2018_10_02_12_01",
+             "TOD" = "run_3.run_2018_10_02_14_30"
              #"TODprelim" = "run_3.run_2018_08_10_21_04"
              ) 
 
@@ -26,7 +27,7 @@ bdir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support"
 
 data.dir <- file.path(bdir, "script_input")
 out.dir <- file.path(bdir, "Model_Output/Working")
-out.dir <- file.path(bdir, "Model_Output") # for final outputs 
+#out.dir <- file.path(bdir, "Model_Output") # for final outputs 
 out.dir.maps <- file.path(out.dir, "Maps")
 
 years <- c(2050)
