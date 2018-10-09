@@ -16,7 +16,7 @@ out.file.nm <- settings$htm$out.file.nm
 
 # lookup table
 constraints <- fread(file.path(data.dir, "development_constraints.csv"))
-capacity <- fread(file.path(data.dir, "CapacityIndicatorPcl_res50.csv"))
+#capacity <- fread(file.path(data.dir, "CapacityIndicatorPcl_res50.csv"))
 
 
 # transform data ----------------------------------------------------------
@@ -24,6 +24,7 @@ capacity <- fread(file.path(data.dir, "CapacityIndicatorPcl_res50.csv"))
 # the density brackets
 density.split <- list(res = c(12, 50), nonres = c(1, 3))
 filename <- "parcel__dataset_table__households_jobs__2050.tab" 
+filename.byr <- "parcel__dataset_table__households_jobs__2017.tab" 
 
 dlist <- NULL
 for (r in 1:length(run.dir)) { # for each run
@@ -32,6 +33,7 @@ for (r in 1:length(run.dir)) { # for each run
   
   # load parcels - this will be an indicator file
   pcl <- fread(file.path(base.dir, "indicators", filename))
+  pcl.byr <- fread(file.path(base.dir, "indicators", filename.byr))
   
   # get the maximum density
   constr <- constraints[, .(max_dens = max(maximum)), by = .(plan_type_id, constraint_type)]
@@ -41,8 +43,8 @@ for (r in 1:length(run.dir)) { # for each run
   # pcl[constr[constraint_type == "far"], max_nonres_density := i.max_dens, on = "plan_type_id"]
   
   # categorize into three groups
-  cap <- capacity[, .(parcel_id, DUbase)]
-  pcl[cap, residential_units_base := i.DUbase, on = "parcel_id"][is.na(residential_units_base), residential_units_base := 0]
+  #cap <- capacity[, .(parcel_id, DUbase)]
+  pcl[pcl.byr, residential_units_base := i.residential_units, on = "parcel_id"][is.na(residential_units_base), residential_units_base := 0]
   pcl[, `:=` (real_residential_units = pmax(residential_units, households),
               res_density_type = factor(ifelse(max_res_density < density.split$res[1], "low",
                                                ifelse(max_res_density >= density.split$res[2], "high", "med")), levels = c("low", "med", "high")))]
