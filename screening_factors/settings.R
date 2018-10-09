@@ -5,28 +5,41 @@
 
 # Aws-model07 - tdTOD - \\aws-model07\E$\opusgit\urbansim_data\data\psrc_parcel\runs\run_9.run_2018_08_30_22_08
 # Aws-model05 - TOD - \\aws-model05\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_10_21_04
-
-base <- list(Aws01 = "//aws-model01/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Aws02 = "//aws-model02/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Aws03 = "//aws-model03/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Aws04 = "//aws-model04/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Aws05 = "//aws-model05/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Aws06 = "//aws-model06/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Aws07 = "//aws-model07/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Aws08 = "//aws-model08/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Aws09 = "//aws-model09/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Modelsrv5 = "//modelsrv5/d$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Modelsrv6 = "//modelsrv6/d$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Modelsrv8 = "//MODELSRV8/d$/opusgit/urbansim_data/data/psrc_parcel/runs",
-             Modelsrv3 = "//modelsrv3/e$/opusgit/urbansim_data/data/psrc_parcel/runs"
-)
+rund <- "L:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs"
+base <- list(Aws01 = file.path(rund, "awsmodel01"),
+             Aws03 = file.path(rund, "awsmodel03"),
+             Aws04 = file.path(rund, "awsmodel04"),
+             Aws05 = file.path(rund, "awsmodel05"),
+             Aws06 = file.path(rund, "awsmodel06"),
+             Aws07 = file.path(rund, "awsmodel07"))
+             
+# base <- list(Aws01 = "//aws-model01/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Aws02 = "//aws-model02/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Aws03 = "//aws-model03/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Aws04 = "//aws-model04/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Aws05 = "//aws-model05/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Aws06 = "//aws-model06/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Aws07 = "//aws-model07/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Aws08 = "//aws-model08/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Aws09 = "//aws-model09/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Modelsrv5 = "//modelsrv5/d$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Modelsrv6 = "//modelsrv6/d$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Modelsrv8 = "//MODELSRV8/d$/opusgit/urbansim_data/data/psrc_parcel/runs",
+#              Modelsrv3 = "//modelsrv3/e$/opusgit/urbansim_data/data/psrc_parcel/runs"
+# )
 
 run.dir <- c("iSTC" = "run_3.run_2018_08_17_13_06",
-             "iDUG" = "run_1.run_2018_08_17_15_45",
-             "iH2O2" = "run_4.run_2018_08_17_16_15",
-             "tdTOD" = "run_10.run_2018_09_06_11_08")
+             "DUG" = "run_1.run_2018_10_01_20_37",
+             # "iH2O2" = "run_4.run_2018_08_17_16_15",
+             # "tdTOD" = "run_3.run_2018_10_02_14_30",
+             "DUGB" = "run_4.run_2018_10_02_11_57",
+             "H2O2" = "run_6.run_2018_10_02_12_01",
+             "TODin_rgc" ="run_11.run_2018_10_02_20_32",
+             "TODex_rgc" = "run_4.run_2018_10_02_19_32"
+             )
 
 out.dir <- "X:/DSA/Vision2050/land_use_tables"
+# out.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/scripts_results"
           
 data.dir <- "J:/Projects/V2050/SEIS/Data_Support/script_input"
 years <- c(2050)

@@ -16,6 +16,7 @@ out.file.nm <- settings$htm$out.file.nm
 
 # lookup table
 constraints <- fread(file.path(data.dir, "development_constraints.csv"))
+capacity <- fread(file.path(data.dir, "CapacityIndicatorPcl_res50.csv"))
 
 
 # transform data ----------------------------------------------------------
@@ -35,13 +36,15 @@ for (r in 1:length(run.dir)) { # for each run
   # get the maximum density
   constr <- constraints[, .(max_dens = max(maximum)), by = .(plan_type_id, constraint_type)]
   
-  # derive max residential and non-res density
-  pcl[constr[constraint_type == "units_per_acre"], max_res_density := i.max_dens, on = "plan_type_id"]
+  # derive max residential and non-res density, remove original residential_units_base
+  pcl[constr[constraint_type == "units_per_acre"], max_res_density := i.max_dens, on = "plan_type_id"][, residential_units_base := NULL]
   # pcl[constr[constraint_type == "far"], max_nonres_density := i.max_dens, on = "plan_type_id"]
   
   # categorize into three groups
-  pcl[, `:=` (real_residential_units = pmax(residential_units, households), 
-              res_density_type = factor(ifelse(max_res_density < density.split$res[1], "low", 
+  cap <- capacity[, .(parcel_id, DUbase)]
+  pcl[cap, residential_units_base := i.DUbase, on = "parcel_id"][is.na(residential_units_base), residential_units_base := 0]
+  pcl[, `:=` (real_residential_units = pmax(residential_units, households),
+              res_density_type = factor(ifelse(max_res_density < density.split$res[1], "low",
                                                ifelse(max_res_density >= density.split$res[2], "high", "med")), levels = c("low", "med", "high")))]
   # pcl[, nonres_density_type := factor(ifelse(max_nonres_density < density.split$nonres[1], "low",
   #                                            ifelse(max_nonres_density >= density.split$nonres[2], "high", "med")),
