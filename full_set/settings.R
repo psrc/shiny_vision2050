@@ -13,10 +13,12 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
             )
 script.dir <- "/Users/hana/R/vision2050indicators/full_set"
 run.dir <- c("STC" = "run_3.run_2018_08_17_13_06",
-             "DUGb" = "run_4.run_2018_10_02_11_57", 
+             "DUG" = "run_4.run_2018_10_02_11_57", 
              "H2O2" = "run_6.run_2018_10_02_12_01",
-             "TOD" = "run_3.run_2018_10_02_14_30"
-             #"TODprelim" = "run_3.run_2018_08_10_21_04"
+             "TOD" = "run_3.run_2018_10_02_14_30",
+             "H2O2-JH" = "run_2.run_2018_10_05_14_50",
+             "DUG-JH" = "run_1.run_2018_10_01_20_37",
+             "TOD-JH" = "run_12.run_2018_10_05_15_04"
              ) 
 
 indicator.dirnm <- "indicators"
