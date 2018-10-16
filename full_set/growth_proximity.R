@@ -15,26 +15,30 @@ ind.extension <- ".csv"
 juris <- fread(file.path(data.dir, "Juris_Reporting.csv"))
 counties <- unique(juris[, .(countyID, county)])
 
-names.conversion <- list(transit_buffer = "gpro", uga_buffer = "gpro", park_buffer = "park", growth_amenities = "gamn")
+names.conversion <- list(transit_buffer = "gpro", uga_buffer = "gpro", park_buffer = "park", 
+                         growth_amenities = "gamn", sewer_buffer = "sewr")
 
 out.file.nm <- list(transit_buffer = settings$gpro$out.file.nm.a, # "28a_transit_proximity"
                     uga_buffer = settings$gpro$out.file.nm.b, # "28b_uga_proximity"
 		                park_buffer = settings$park$out.file.nm,  # "64_buffered_parks"
-		                growth_amenities = settings$gamn$out.file.nm # "31_growth_amentities"
+		                growth_amenities = settings$gamn$out.file.nm, # "31_growth_amentities"
+		                sewer_buffer = settings$sewr$out.file.nm # "58_sewer_proximity"
 		                )
 all_attrs <- list(transit_buffer = c("population", "employment", "activity_units"),
 	     	          uga_buffer = c("population", "employment", "activity_units"),
 		              park_buffer = c("population", "employment", "activity_units"),
-		              growth_amenities = "population"
+		              growth_amenities = "population",
+		              sewer_buffer = c("population", "employment", "activity_units")
 		              )
 # which attributes to use for computing shares
 share_attr <- list(transit_buffer = "activity_units",
                    uga_buffer = "activity_units", 
                    park_buffer = "activity_units", 
-                   growth_amenities = "population")
+                   growth_amenities = "population",
+                   sewer_buffer = "activity_units")
 
 ind.types <- names(all_attrs)
-#ind.types <- "uga_buffer"
+ind.types <- "park_buffer"
 
 geo <- "county"
 geo.id <- paste0(geo, "_id")
@@ -57,26 +61,35 @@ for(itype in ind.types) {
   include.actuals <- FALSE
   if(!is.null(settings[[names.conversion[[itype]]]]$include.actuals)) 
     include.actuals <- settings[[names.conversion[[itype]]]]$include.actuals
-  for(buffer in c(itype, "total")) {
+  for(buffer in c(itype, "total")) { # run twice, once for the specific buffer indicator, once for totals
+    # get Opus indicators
     these.attr <- if(buffer == itype) paste(attributes,  itype, sep = "_") else attributes
     alldata <- compile.tbl(geo, allruns, run.dir, these.attr, ind.extension)
+    
+    # convert to long format
     dfm <- data.table::melt(alldata,
                           id.vars = c("name_id", "run", "indicator"),
                           measure.vars = grep("yr", colnames(alldata), value = TRUE),
                           variable.name = "year", value.name = "estimate")
+    
+    # remove irrelevant years
     dfm <- dfm[year %in% fs.years.to.keep & name_id > 0]
   
     # add military and GQ
     filter <- list( quo(`==`(!!sym(paste0(itype, "_id")), 1))) # filter records with buffer_id being one
     milgq <- compile.mil.gq(geo.id, mil.filter = filter, gq.filter = filter)
     dfmmgq <- dfm[milgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
+    
+    # remove "yr" from year values
     dfmmgq[, year := gsub("yr", "", year)]
+    
+    # remove the name of the buffer from the indicator, e.g. "population_park_buffer" is replaced with "population"
     dfmmgq[, indicator := gsub(paste0("_", itype), "", indicator)]
-    #dfmmgq[, is_total := buffer == "total"]
-    #if(buffer == "total")
-    #  dfmmgq[, indicator := paste(indicator, "total", sep = "_")]
+    
+    # collect result
     buffer.df[[buffer]] <- dfmmgq
   }
+  
   # merge buffer and totals  
   resdf <- merge(buffer.df[[itype]], buffer.df[["total"]], by = c("year", "indicator", "run", "name_id"))
   setnames(resdf, "estimate.x", "estimate")
@@ -84,9 +97,7 @@ for(itype in ind.types) {
   # compute deltas
   resdf[resdf[year == 2017], `:=`(base = i.estimate, base_total = i.total), on = .(indicator, run, name_id)]
   resdf[, `:=`(delta = estimate - base, delta_total = total - base_total)]
-  # compute shares
-  #resdf[, share := estimate / total]
-  #resdf[, delta_share := delta / delta_total]
+  # merge with counties
   resdf <- merge(resdf, counties, by.x = "name_id", by.y = "countyID")
 
   # names of columns to compute shares with

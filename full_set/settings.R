@@ -80,7 +80,8 @@ settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
                  gpro = list(out.file.nm.a = "28a_transit_proximity",
                              out.file.nm.b = "28b_uga_proximity"),
 		            park = list(out.file.nm = "64_buffered_parks", include.actuals = TRUE),
-		            gamn = list(out.file.nm = "31_growth_amentities")
+		            gamn = list(out.file.nm = "31_growth_amentities"),
+		            sewr = list(out.file.nm = "58_sewer_proximity")
             )
 
 # assigns directories to runs
