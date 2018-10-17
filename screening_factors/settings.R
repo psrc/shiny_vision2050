@@ -28,14 +28,15 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
 #              Modelsrv3 = "//modelsrv3/e$/opusgit/urbansim_data/data/psrc_parcel/runs"
 # )
 
-run.dir <- c("iSTC" = "run_3.run_2018_08_17_13_06",
-             "DUG" = "run_1.run_2018_10_01_20_37",
-             # "iH2O2" = "run_4.run_2018_08_17_16_15",
-             # "tdTOD" = "run_3.run_2018_10_02_14_30",
-             "DUGB" = "run_4.run_2018_10_02_11_57",
-             "H2O2" = "run_6.run_2018_10_02_12_01",
-             "TODin_rgc" ="run_11.run_2018_10_02_20_32",
-             "TODex_rgc" = "run_4.run_2018_10_02_19_32"
+run.dir <- c(#"STC" = "run_3.run_2018_08_17_13_06",
+             # "DUG" = "run_4.run_2018_10_02_11_57",
+             # "DUG-JH" = "run_1.run_2018_10_01_20_37",
+             # "H2O2" = "run_6.run_2018_10_02_12_01",
+             # "H2O2-JH" = "run_2.run_2018_10_05_14_50",
+             # "TOD" = "run_3.run_2018_10_02_14_30",
+             # "TOD-JH" = "run_12.run_2018_10_05_15_04",
+             "DW" = "run_3.run_2018_10_11_13_14",
+             "DW-JH" = "run_13.run_2018_10_11_13_14"
              )
 
 out.dir <- "X:/DSA/Vision2050/land_use_tables"
