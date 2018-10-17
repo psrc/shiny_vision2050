@@ -11,7 +11,8 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
              Aws04 = file.path(rund, "awsmodel04"),
              Aws05 = file.path(rund, "awsmodel05"),
              Aws06 = file.path(rund, "awsmodel06"),
-             Aws07 = file.path(rund, "awsmodel07"))
+             Aws07 = file.path(rund, "awsmodel07"),
+             Aws08 = file.path(rund, "awsmodel08"))
              
 # base <- list(Aws01 = "//aws-model01/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
 #              Aws02 = "//aws-model02/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
@@ -39,7 +40,8 @@ run.dir <- c(#"STC" = "run_3.run_2018_08_17_13_06",
              "DW-JH" = "run_13.run_2018_10_11_13_14"
              )
 
-out.dir <- "X:/DSA/Vision2050/land_use_tables"
+# out.dir <- "X:/DSA/Vision2050/land_use_tables"
+out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Model_Output"
 # out.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/scripts_results"
           
 data.dir <- "J:/Projects/V2050/SEIS/Data_Support/script_input"

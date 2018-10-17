@@ -1,6 +1,7 @@
 # main file for generating all indicators
 
 wrk.dir <- "/Users/hana/R/vision2050indicators/full_set"
+# wrk.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/full_set"
 curr.dir <- getwd()
 setwd(wrk.dir)
 

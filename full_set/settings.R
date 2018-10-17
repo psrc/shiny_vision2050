@@ -9,7 +9,7 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
              Aws05 = file.path(rund, "awsmodel05"),
              Aws06 = file.path(rund, "awsmodel06"),
              Aws07 = file.path(rund, "awsmodel07"),
-             Aws07 = file.path(rund, "awsmodel08")
+             Aws08 = file.path(rund, "awsmodel08")
             )
 script.dir <- "/Users/hana/R/vision2050indicators/full_set"
 run.dir <- c("STC" = "run_3.run_2018_08_17_13_06",
