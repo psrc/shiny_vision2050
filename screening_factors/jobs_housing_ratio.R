@@ -135,6 +135,7 @@ for (r in 1:length(run.dir)) {
   t2 <- t[match(roworder, t$subarea_name)]
   setcolorder(t2, c("cnty_name", "subarea_name", "run", "scenario", paste0(new.attributes, "_byr"), paste0(new.attributes, "_", years.col), paste0("ehratio_", c("byr", years.col)), grep("ehindex", colnames(t2), value = T)))
   colnames(t2)[grep("byr", colnames(t2))] <- str_replace_all(colnames(t2)[grep("byr", colnames(t2))], "byr", paste0("yr", byr))
+  colnames(t2)[grep("^(em|h).*yr2017", colnames(t2))] <- paste0(colnames(t2)[grep("^(em|h).*yr2017", colnames(t2))], "_actual")
   dlist[[names(run.dir[r])]] <- t2
 }
 
