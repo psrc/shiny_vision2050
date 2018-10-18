@@ -133,73 +133,52 @@ df4 <- df3[, .(name_id, GEOID10, run, Comp.Index, indicator, year, actual_byr, e
 df5 <- dcast.data.table(df4, name_id + GEOID10 + run + Comp.Index + indicator + actual_byr ~ year, value.var = "estimate")
 setnames(df5, years.cols[1], "byr")
 
-delta.expr <- parse(text = paste0("delta := ", years.col, " - byr"))
 sdcols <- c("actual_byr", "byr", years.col)
 sumcols <- paste0("sum_", sdcols)
-df8 <- df5[!is.na(Comp.Index), lapply(.SD, sum), .SDcols = sdcols, by = list(indicator, Comp.Index, run)][, eval(delta.expr)]
-
-# calculate sums
-delta.sums <- df8[, .(sum_delta = sum(delta)), by = list(indicator, run)]
-region.sums <- df8[, lapply(.SD, sum), .SDcols = sdcols, by = list(indicator, run)]
-setnames(region.sums, sdcols, sumcols)
-
-# calculate Mod to Very High opp areas, bind to main df
-mod.high.opp <- df8[Comp.Index %in% opp.levels[3:5], lapply(.SD, sum), .SDcols = c(sdcols, "delta"), by = list(indicator, run)
-                    ][, Comp.Index := eval(opp.levels[6])]
-df8.bind <- rbindlist(list(df8, mod.high.opp), use.names = TRUE)
-
 sharecols <- paste0("share_", sdcols[2:3])
-share.expr1 <- parse(text = paste0(sharecols[1], ":=", sdcols[2], "/", sumcols[2]))
-share.expr2 <- parse(text = paste0(sharecols[2], ":=", sdcols[3], "/", sumcols[3]))
 
-# join sums, calculate
-df9 <- df8.bind[region.sums, on = c("indicator", "run")
-                ][delta.sums, on = c("indicator", "run")
-                  ][, eval(share.expr1)
-                    ][, eval(share.expr2)
-                      ][, share_delta := delta/sum_delta
-                        ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
-                          ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
-                            ][order(indicator.sort, Comp.Index.sort)
-                              ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL, county = "Region")
-                                ]
-
-calc.county <- function(atable) {
+calc.by.geog <- function(geog, atable) {
   delta.expr <- parse(text = paste0("delta := ", years.col, " - byr"))
-  sdcols <- c("actual_byr", "byr", years.col)
-  sumcols <- paste0("sum_", sdcols)
-  sharecols <- paste0("share_", sdcols[2:3])
   share.expr1 <- parse(text = paste0(sharecols[1], ":=", sdcols[2], "/", sumcols[2]))
   share.expr2 <- parse(text = paste0(sharecols[2], ":=", sdcols[3], "/", sumcols[3]))
   
-  df <- atable[, countycode := as.character(str_sub(GEOID10, 4, 5))]
-  df[, county := switch(countycode, "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = countycode]
-  d <- df[, lapply(.SD, sum), .SDcols = grep("yr", colnames(df)), by = .(county, run, Comp.Index, indicator)
-          ][!is.na(Comp.Index), ][, eval(delta.expr)]
-  # calculate sums
-  delta.sums <- d[, .(sum_delta = sum(delta)), by = .(county, indicator, run)]
-  cnty.sums <- d[, lapply(.SD, sum), .SDcols = sdcols, by = .(county, indicator, run)]
-  setnames(cnty.sums, sdcols, sumcols)
+  group.by.cols <- c("county", "indicator", "Comp.Index", "run")
+  group.by.cols2 <- c("county", "indicator", "run")
   
-  # calculate Mod to Very High opp areas, bind to main df
-  mod.high.opp <- d[Comp.Index %in% opp.levels[3:5], lapply(.SD, sum), .SDcols = c(sdcols, "delta"), by = list(county, indicator, run)
-                      ][, Comp.Index := eval(opp.levels[6])]
+  df <- copy(atable)
+  if (geog == "county") {
+    df <- atable[, countycode := as.character(str_sub(GEOID10, 4, 5))]
+    df[, county := switch(countycode, "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = countycode]
+  } else if (geog == "region") {
+    df[, county := "Region"]
+  }
+  d <- df[!is.na(Comp.Index), lapply(.SD, sum), .SDcols = c(sdcols), by = group.by.cols][, eval(delta.expr)]
+  
+  # calculate sums
+  delta.sums <- d[, .(sum_delta = sum(delta)), by = group.by.cols2]
+  geog.sums <- d[, lapply(.SD, sum), .SDcols = sdcols, by = group.by.cols2]
+  setnames(geog.sums, sdcols, sumcols)
+  
+  # calculate Mod to Very High opp areas
+  mod.high.opp <- d[Comp.Index %in% opp.levels[3:5], lapply(.SD, sum), .SDcols = c(sdcols, "delta"), by = group.by.cols2
+                    ][, Comp.Index := eval(opp.levels[6])]
+  # bind to main df
   dall <- rbindlist(list(d, mod.high.opp), use.names = TRUE)
-  dfin <- dall[cnty.sums, on = c("county", "indicator", "run")
-                  ][delta.sums, on = c("county", "indicator", "run")
-                    ][, eval(share.expr1)
-                      ][, eval(share.expr2)
-                        ][, share_delta := delta/sum_delta
-                          ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
-                            ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
-                              ][order(indicator.sort, Comp.Index.sort)
-                                ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL)
-                                  ]
+  dfin <- dall[geog.sums, on = group.by.cols2
+               ][delta.sums, on = group.by.cols2
+                 ][, eval(share.expr1)
+                   ][, eval(share.expr2)
+                     ][, share_delta := delta/sum_delta
+                       ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
+                         ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
+                           ][order(indicator.sort, Comp.Index.sort)
+                             ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL)
+                               ]
 }
 
-# bind geographies
-df.cnty <- calc.county(df5)
-df9 <- rbindlist(list(df.cnty, df9), use.names = TRUE)
+df.reg <- calc.by.geog("region", df5)
+df.cnty <- calc.by.geog("county", df5)
+df9 <- rbindlist(list(df.cnty, df.reg), use.names = TRUE)
 
 # loop through each run
 dlist <- NULL
