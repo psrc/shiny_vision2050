@@ -135,12 +135,13 @@ setnames(df5, years.cols[1], "byr")
 
 sdcols <- c("actual_byr", "byr", years.col)
 sumcols <- paste0("sum_", sdcols)
-sharecols <- paste0("share_", sdcols[2:3])
+sharecols <- paste0("share_", sdcols)
 
 calc.by.geog <- function(geog, atable) {
   delta.expr <- parse(text = paste0("delta := ", years.col, " - byr"))
-  share.expr1 <- parse(text = paste0(sharecols[1], ":=", sdcols[2], "/", sumcols[2]))
-  share.expr2 <- parse(text = paste0(sharecols[2], ":=", sdcols[3], "/", sumcols[3]))
+  share.expr1 <- parse(text = paste0(sharecols[1], ":=", sdcols[1], "/", sumcols[1]))
+  share.expr2 <- parse(text = paste0(sharecols[2], ":=", sdcols[2], "/", sumcols[2]))
+  share.expr3 <- parse(text = paste0(sharecols[3], ":=", sdcols[3], "/", sumcols[3]))
   
   group.by.cols <- c("county", "indicator", "Comp.Index", "run")
   group.by.cols2 <- c("county", "indicator", "run")
@@ -168,12 +169,13 @@ calc.by.geog <- function(geog, atable) {
                ][delta.sums, on = group.by.cols2
                  ][, eval(share.expr1)
                    ][, eval(share.expr2)
-                     ][, share_delta := delta/sum_delta
-                       ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
-                         ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
-                           ][order(indicator.sort, Comp.Index.sort)
-                             ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL)
-                               ]
+                     ][, eval(share.expr3)
+                       ][, share_delta := delta/sum_delta
+                         ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
+                           ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
+                             ][order(indicator.sort, Comp.Index.sort)
+                               ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL)
+                                 ]
 }
 
 df.reg <- calc.by.geog("region", df5)
@@ -188,7 +190,8 @@ for (r in 1:length(run.dir)) {
   setcolorder(t, c("county", "indicator", "Comp.Index", "run", "scenario", sdcols, sumcols, sharecols, grep("delta", colnames(t), value = TRUE)))
   setnames(t, c("Comp.Index"), c("index"))
   colnames(t)[grep("byr", colnames(t))] <- str_replace_all(colnames(t)[grep("byr", colnames(t))], "byr", paste0("yr", byr))
-  setnames(t, colnames(t)[grep("actual", colnames(t))], c(paste0(years.cols[1], "_actual"), paste0("sum_", years.cols[1], "_actual")))
+  setnames(t, colnames(t)[grep("actual", colnames(t))], c(paste0(c("", "sum_", "share_"),  paste0(years.cols[1], "_actual"))))
+  t[, (paste0("share_", years.cols[1])) := NULL][] # exclude share modeled byr; only shares for actual byr needed
   dlist[[names(run.dir[r])]] <- t
 }
 
