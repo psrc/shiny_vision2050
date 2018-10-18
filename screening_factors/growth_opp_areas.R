@@ -161,16 +161,52 @@ df9 <- df8.bind[region.sums, on = c("indicator", "run")
                         ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
                           ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
                             ][order(indicator.sort, Comp.Index.sort)
-                              ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL)
+                              ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL, county = "Region")
                                 ]
 
+calc.county <- function(atable) {
+  delta.expr <- parse(text = paste0("delta := ", years.col, " - byr"))
+  sdcols <- c("actual_byr", "byr", years.col)
+  sumcols <- paste0("sum_", sdcols)
+  sharecols <- paste0("share_", sdcols[2:3])
+  share.expr1 <- parse(text = paste0(sharecols[1], ":=", sdcols[2], "/", sumcols[2]))
+  share.expr2 <- parse(text = paste0(sharecols[2], ":=", sdcols[3], "/", sumcols[3]))
+  
+  df <- atable[, countycode := as.character(str_sub(GEOID10, 4, 5))]
+  df[, county := switch(countycode, "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = countycode]
+  d <- df[, lapply(.SD, sum), .SDcols = grep("yr", colnames(df)), by = .(county, run, Comp.Index, indicator)
+          ][!is.na(Comp.Index), ][, eval(delta.expr)]
+  # calculate sums
+  delta.sums <- d[, .(sum_delta = sum(delta)), by = .(county, indicator, run)]
+  cnty.sums <- d[, lapply(.SD, sum), .SDcols = sdcols, by = .(county, indicator, run)]
+  setnames(cnty.sums, sdcols, sumcols)
+  
+  # calculate Mod to Very High opp areas, bind to main df
+  mod.high.opp <- d[Comp.Index %in% opp.levels[3:5], lapply(.SD, sum), .SDcols = c(sdcols, "delta"), by = list(county, indicator, run)
+                      ][, Comp.Index := eval(opp.levels[6])]
+  dall <- rbindlist(list(d, mod.high.opp), use.names = TRUE)
+  dfin <- dall[cnty.sums, on = c("county", "indicator", "run")
+                  ][delta.sums, on = c("county", "indicator", "run")
+                    ][, eval(share.expr1)
+                      ][, eval(share.expr2)
+                        ][, share_delta := delta/sum_delta
+                          ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
+                            ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
+                              ][order(indicator.sort, Comp.Index.sort)
+                                ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL)
+                                  ]
+}
+
+# bind geographies
+df.cnty <- calc.county(df5)
+df9 <- rbindlist(list(df.cnty, df9), use.names = TRUE)
 
 # loop through each run
 dlist <- NULL
 for (r in 1:length(run.dir)) {
   t <- NULL
   t <- df9[run == run.dir[r], ][, scenario := names(run.dir[r])]
-  setcolorder(t, c("indicator", "Comp.Index", "run", "scenario", sdcols, sumcols, sharecols, grep("delta", colnames(t), value = TRUE)))
+  setcolorder(t, c("county", "indicator", "Comp.Index", "run", "scenario", sdcols, sumcols, sharecols, grep("delta", colnames(t), value = TRUE)))
   setnames(t, c("Comp.Index"), c("index"))
   colnames(t)[grep("byr", colnames(t))] <- str_replace_all(colnames(t)[grep("byr", colnames(t))], "byr", paste0("yr", byr))
   setnames(t, colnames(t)[grep("actual", colnames(t))], c(paste0(years.cols[1], "_actual"), paste0("sum_", years.cols[1], "_actual")))
