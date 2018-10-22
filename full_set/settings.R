@@ -12,20 +12,22 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
              Aws08 = file.path(rund, "awsmodel08")
             )
 script.dir <- "/Users/hana/R/vision2050indicators/full_set"
-run.dir <- c("STC" = "run_3.run_2018_08_17_13_06",
-             "DUG" = "run_4.run_2018_10_02_11_57", 
-             "H2O2" = "run_6.run_2018_10_02_12_01",
-             "TOD" = "run_3.run_2018_10_02_14_30",
-             "H2O2-JH" = "run_2.run_2018_10_05_14_50",
-             "DUG-JH" = "run_1.run_2018_10_01_20_37",
-             "TOD-JH" = "run_12.run_2018_10_05_15_04"
+run.dir <- c(#"STC" = "run_3.run_2018_08_17_13_06",
+             # "DUG" = "run_4.run_2018_10_02_11_57", 
+             # "H2O2" = "run_6.run_2018_10_02_12_01",
+             # "TOD" = "run_3.run_2018_10_02_14_30",
+             # "H2O2-JH" = "run_2.run_2018_10_05_14_50",
+             # "DUG-JH" = "run_1.run_2018_10_01_20_37",
+             # "TOD-JH" = "run_12.run_2018_10_05_15_04",
+             "DW" = "run_3.run_2018_10_11_13_14",
+             "DW-JH" = "run_13.run_2018_10_11_13_14"
              ) 
 
 indicator.dirnm <- "indicators"
 
 # base directory used for various inputs and outputs
 bdir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support"
-#bdir <- "J:/Projects/V2050/SEIS/Data_Support"
+# bdir <- "J:/Projects/V2050/SEIS/Data_Support"
 
 data.dir <- file.path(bdir, "script_input")
 out.dir <- file.path(bdir, "Model_Output/Working")
@@ -56,18 +58,19 @@ process.colnames <- function(df){
   colnames(df)[grep("^X\\d+", colnames(df))] <- gsub("X", "yr", colnames(df)[grep("^X\\d+", colnames(df))])
   df
 }
-gq.file.nm <- "group-quarters_original.xlsx" # does not have buffer ids -> will not work with 28a,b
+# gq.file.nm <- "group-quarters_original.xlsx" # does not have buffer ids -> will not work with 28a,b
+gq.file.nm <- "group_quarters_geo.xlsx"
 gq.file.nm.sup <- "group_quarters_geo.xlsx" # contains additional geographies
 
 gq.file <- read.xlsx(file.path(data.dir, gq.file.nm)) # for Christy's scripts
 gq.file2 <- read.xlsx(file.path(data.dir, gq.file.nm), check.names = TRUE) # for Hana's scripts
 gq.file2 <- process.colnames(gq.file2)
 
-# add more geographies to the original gq file
-gq.file.sup <- read.xlsx(file.path(data.dir, gq.file.nm.sup), check.names = TRUE)
-gq.file.sup <- process.colnames(gq.file.sup)
-miscols <- setdiff(colnames(gq.file.sup), colnames(gq.file2))
-gq.file2 <- merge(gq.file2, gq.file.sup[, c("record", miscols)], by = "record")
+# # add more geographies to the original gq file
+# gq.file.sup <- read.xlsx(file.path(data.dir, gq.file.nm.sup), check.names = TRUE)
+# gq.file.sup <- process.colnames(gq.file.sup)
+# miscols <- setdiff(colnames(gq.file.sup), colnames(gq.file2))
+# gq.file2 <- merge(gq.file2, gq.file.sup[, c("record", miscols)], by = "record")
 
 # Script-specific settings
 settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),

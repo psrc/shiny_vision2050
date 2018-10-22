@@ -16,29 +16,31 @@ juris <- fread(file.path(data.dir, "Juris_Reporting.csv"))
 counties <- unique(juris[, .(countyID, county)])
 
 names.conversion <- list(transit_buffer = "gpro", uga_buffer = "gpro", park_buffer = "park", 
-                         growth_amenities = "gamn", sewer_buffer = "sewr")
+                         growth_amenities = "gamn"#, sewer_buffer = "sewr"
+                         )
 
 out.file.nm <- list(transit_buffer = settings$gpro$out.file.nm.a, # "28a_transit_proximity"
                     uga_buffer = settings$gpro$out.file.nm.b, # "28b_uga_proximity"
 		                park_buffer = settings$park$out.file.nm,  # "64_buffered_parks"
-		                growth_amenities = settings$gamn$out.file.nm, # "31_growth_amentities"
-		                sewer_buffer = settings$sewr$out.file.nm # "58_sewer_proximity"
+		                growth_amenities = settings$gamn$out.file.nm#, # "31_growth_amentities"
+		                # sewer_buffer = settings$sewr$out.file.nm # "58_sewer_proximity"
 		                )
 all_attrs <- list(transit_buffer = c("population", "employment", "activity_units"),
 	     	          uga_buffer = c("population", "employment", "activity_units"),
 		              park_buffer = c("population", "employment", "activity_units"),
-		              growth_amenities = "population",
-		              sewer_buffer = c("population", "employment", "activity_units")
+		              growth_amenities = "population"#,
+		              # sewer_buffer = c("population", "employment", "activity_units")
 		              )
 # which attributes to use for computing shares
 share_attr <- list(transit_buffer = "activity_units",
                    uga_buffer = "activity_units", 
                    park_buffer = "activity_units", 
-                   growth_amenities = "population",
-                   sewer_buffer = "activity_units")
+                   growth_amenities = "population"#,
+                   # sewer_buffer = "activity_units"
+                   )
 
 ind.types <- names(all_attrs)
-ind.types <- "park_buffer"
+# ind.types <- "park_buffer"
 
 geo <- "county"
 geo.id <- paste0(geo, "_id")

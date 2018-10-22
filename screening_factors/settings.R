@@ -53,8 +53,8 @@ enlist.lu <- read.xlsx(file.path(data.dir, enlist.lu.nm))
 
 enlist.mil.file.nm <- "enlisted_personnel_SoundCast_08202018.csv"
 
-# gq.file.nm <- "group-quarters.xlsx"
-gq.file.nm <- "group-quarters_original.xlsx"
+gq.file.nm <- "group_quarters_geo.xlsx"
+# gq.file.nm <- "group-quarters_original.xlsx"
 gq.file <- read.xlsx(file.path(data.dir, gq.file.nm))
 
 settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
