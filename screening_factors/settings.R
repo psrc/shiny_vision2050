@@ -1,10 +1,4 @@
-# Aws-model04 - iSTC - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_17_13_06
-# Aws-model03 - iDUG - \\aws-model03\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_1.run_2018_08_17_15_45
-# Aws-model05 - iH2O2 - \\aws-model04\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_4.run_2018_08_17_16_15
-# Aws-model07 - tdTOD - \\aws-model07\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_10.run_2018_09_06_11_08
 
-# Aws-model07 - tdTOD - \\aws-model07\E$\opusgit\urbansim_data\data\psrc_parcel\runs\run_9.run_2018_08_30_22_08
-# Aws-model05 - TOD - \\aws-model05\e$\opusgit\urbansim_data\data\psrc_parcel\runs\run_3.run_2018_08_10_21_04
 rund <- "L:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs"
 base <- list(Aws01 = file.path(rund, "awsmodel01"),
              Aws03 = file.path(rund, "awsmodel03"),
@@ -29,19 +23,19 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
 #              Modelsrv3 = "//modelsrv3/e$/opusgit/urbansim_data/data/psrc_parcel/runs"
 # )
 
-run.dir <- c(#"STC" = "run_3.run_2018_08_17_13_06",
+run.dir <- c("STC" = "run_3.run_2018_08_17_13_06"#,
              # "DUG" = "run_4.run_2018_10_02_11_57",
              # "DUG-JH" = "run_1.run_2018_10_01_20_37",
              # "H2O2" = "run_6.run_2018_10_02_12_01",
              # "H2O2-JH" = "run_2.run_2018_10_05_14_50",
              # "TOD" = "run_3.run_2018_10_02_14_30",
              # "TOD-JH" = "run_12.run_2018_10_05_15_04",
-             "DW" = "run_3.run_2018_10_11_13_14",
-             "DW-JH" = "run_13.run_2018_10_11_13_14"
+             # "DW" = "run_3.run_2018_10_11_13_14",
+             # "DW-JH" = "run_13.run_2018_10_11_13_14"
              )
 
-# out.dir <- "X:/DSA/Vision2050/land_use_tables"
-out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Model_Output"
+out.dir <- "X:/DSA/Vision2050/land_use_tables"
+# out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Model_Output"
 # out.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/scripts_results"
           
 data.dir <- "J:/Projects/V2050/SEIS/Data_Support/script_input"
@@ -56,6 +50,8 @@ enlist.mil.file.nm <- "enlisted_personnel_SoundCast_08202018.csv"
 gq.file.nm <- "group_quarters_geo.xlsx"
 # gq.file.nm <- "group-quarters_original.xlsx"
 gq.file <- read.xlsx(file.path(data.dir, gq.file.nm))
+
+eqlu.file <- read.xlsx(file.path(data.dir, "2015-and-2016-5yr-ACS-Equity-Populations-20181009.xlsx"), sheet = "acs5yr_2016") %>% as.data.table
 
 settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
                  htm = list(out.file.nm = "17_housing_type_mix"),
