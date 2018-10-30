@@ -13,7 +13,7 @@ if(!exists("set.globals") || !set.globals) {
   source("functions.R")
 }
 
-
+cat("\nComputing indicator 79, growth in opportunity areas\n")
 out.file.nm <- settings$goa$out.file.nm 
 
 years.cols <- paste0("yr", c(byr, years))
