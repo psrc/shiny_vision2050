@@ -12,15 +12,15 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
              Aws08 = file.path(rund, "awsmodel08")
             )
 script.dir <- "/Users/hana/R/vision2050indicators/full_set"
-run.dir <- c(#"STC" = "run_3.run_2018_08_17_13_06",
+run.dir <- c("STC" = "run_3.run_2018_08_17_13_06"#,
              # "DUG" = "run_4.run_2018_10_02_11_57", 
              # "H2O2" = "run_6.run_2018_10_02_12_01",
              # "TOD" = "run_3.run_2018_10_02_14_30",
              # "H2O2-JH" = "run_2.run_2018_10_05_14_50",
              # "DUG-JH" = "run_1.run_2018_10_01_20_37",
              # "TOD-JH" = "run_12.run_2018_10_05_15_04",
-             "DW" = "run_3.run_2018_10_11_13_14",
-             "DW-JH" = "run_13.run_2018_10_11_13_14"
+             #"DW" = "run_3.run_2018_10_11_13_14",
+             #"DW-JH" = "run_13.run_2018_10_11_13_14"
              ) 
 
 indicator.dirnm <- "indicators"
@@ -46,6 +46,7 @@ fs.byr <- byr
 fs.years.col <- years.col
 fs.byr.col <- byr.col
 fs.years.to.keep <- years.to.keep
+fs.years.to.keep.int <- c(byr, years)
 
 # military employment
 enlist.lu.nm <- "enlisted_personnel_geo.xlsx"
@@ -81,9 +82,11 @@ settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
                  epden = list(out.file.nm.byr = "22_pop_emp_au_density",
                               out.file.nm = "29_pop_emp_au_density"),
                  gpro = list(out.file.nm.a = "28a_transit_proximity",
-                             out.file.nm.b = "28b_uga_proximity"),
-		            park = list(out.file.nm = "64_buffered_parks", include.actuals = TRUE),
-		            gamn = list(out.file.nm = "31_growth_amentities"),
+                             out.file.nm.b = "28b_uga_proximity", 
+                             include.equity = c(TRUE, FALSE)),
+		            park = list(out.file.nm = "64_buffered_parks", 
+		                        include.actuals = TRUE, include.equity = TRUE),
+		            gamn = list(out.file.nm = "31_growth_amentities", include.equity = TRUE),
 		            sewr = list(out.file.nm = "58_sewer_proximity")
             )
 

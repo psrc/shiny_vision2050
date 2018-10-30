@@ -38,6 +38,10 @@ share_attr <- list(transit_buffer = "activity_units",
                    growth_amenities = "population"#,
                    # sewer_buffer = "activity_units"
                    )
+include.equity <- list(transit_buffer = settings$gpro$include.equity[1],
+                       uga_buffer =  settings$gpro$include.equity[2],
+                       park_buffer = settings$park$include.equity,
+                       growth_amenities = settings$gamn$include.equity)
 
 ind.types <- names(all_attrs)
 # ind.types <- "park_buffer"
@@ -47,7 +51,7 @@ geo.id <- paste0(geo, "_id")
 
 get.byr.actuals.park_buffer.county <- function() {
   act <- data.table(read.xlsx(file.path(data.dir, "64_parks_access_2017.xlsx"), sheet = "Sheet1"))
-  colnames(act) <- c("county", "employment_2017_actual", "military", "population_2017_actual",
+  colnames(act) <- c("name_id", "employment_2017_actual", "military", "population_2017_actual",
                      "activity_units_2017_actual", "employment_2017_actual_total", 
                      "population_2017_total_actual", "activity_units_2017_total_actual")
   act[, employment_2017_actual := employment_2017_actual + military]
@@ -55,14 +59,16 @@ get.byr.actuals.park_buffer.county <- function() {
   act
 }
 
-
 for(itype in ind.types) {
   cat("\nComputing indicator 28, 31 & 64 for ", itype)
   attributes <- all_attrs[[itype]]
-  buffer.df <- NULL
+  buffer.df <- eqbuffer.df <- NULL
   include.actuals <- FALSE
   if(!is.null(settings[[names.conversion[[itype]]]]$include.actuals)) 
     include.actuals <- settings[[names.conversion[[itype]]]]$include.actuals
+  incl.eqty <- FALSE
+  if(!is.null(include.equity[[itype]])) incl.eqty <- include.equity[[itype]]
+
   for(buffer in c(itype, "total")) { # run twice, once for the specific buffer indicator, once for totals
     # get Opus indicators
     these.attr <- if(buffer == itype) paste(attributes,  itype, sep = "_") else attributes
@@ -78,7 +84,9 @@ for(itype in ind.types) {
     dfm <- dfm[year %in% fs.years.to.keep & name_id > 0]
   
     # add military and GQ
-    filter <- list( quo(`==`(!!sym(paste0(itype, "_id")), 1))) # filter records with buffer_id being one
+    filter <- NULL
+    if(buffer  != "total")
+      filter <- list( quo(`==`(!!sym(paste0(itype, "_id")), 1))) # filter records with buffer_id being one
     milgq <- compile.mil.gq(geo.id, mil.filter = filter, gq.filter = filter)
     dfmmgq <- dfm[milgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
     
@@ -88,19 +96,58 @@ for(itype in ind.types) {
     # remove the name of the buffer from the indicator, e.g. "population_park_buffer" is replaced with "population"
     dfmmgq[, indicator := gsub(paste0("_", itype), "", indicator)]
     
+    # get equity data
+    if(incl.eqty) {
+      file.regexp <- paste0("(^minority|^poverty).*(", paste(these.attr, collapse = "|"), ")\\.csv")
+      edf <- compile.tbl.equity(file.regexp, allruns, run.dir, ind.extension)
+      edf[, equity := switch(name_id, `1` = paste0("non-", generic_equity), `2` = generic_equity), by = name_id
+          ][, indicator := as.character(variable)] # create new field equity: 1 = non-minority/poverty, 2 = minority/poverty
+      edt <- edf[, indicator := substr(indicator, 1, nchar(indicator)-5)]
+      edt <- edf[year %in% fs.years.to.keep.int]
+      if(buffer == "total") {
+        edt <- edt[, .(estimate = sum(estimate)), by = .(run, year, indicator, generic_equity)]
+      } else {
+        edt <- edt[name_id == 2][, `:=`(variable = NULL, equity = NULL)]
+      }
+      edt[, name_id := NULL]
+      setnames(edt, "generic_equity", "name_id")
+      edt[, indicator := gsub(paste0("_", itype), "", indicator)]
+      
+      # transform military df grouping by equity categories and add to forecast
+      eqfilter1 <- eqfilter2 <- NULL
+      if(buffer  != "total") {
+        eqfilter1 <- list( quo(`==`(!!sym("minority_id"), 1)))
+        eqfilter2 <- list( quo(`==`(!!sym("poverty_id"), 1)))
+      }
+      eqmilgq1 <- compile.mil.gq("minority_id", mil.filter = eqfilter1, gq.filter = eqfilter1)
+      eqmilgq2 <- compile.mil.gq("poverty_id", mil.filter = eqfilter2, gq.filter = eqfilter2)
+      eqmilgq <- rbind(eqmilgq1[,name_id := as.character(name_id)][,name_id := "minority"], 
+                       eqmilgq2[,name_id := as.character(name_id)][,name_id := "poverty"])[, year := gsub("yr", "", year)]
+      edt[, name_id := as.character(name_id)]
+      eqmmgq <- edt[eqmilgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
+      
+      eqbuffer.df[[buffer]] <- eqmmgq
+    }
+    
     # collect result
     buffer.df[[buffer]] <- dfmmgq
   }
   
   # merge buffer and totals  
   resdf <- merge(buffer.df[[itype]], buffer.df[["total"]], by = c("year", "indicator", "run", "name_id"))
+  # merge with counties
+  resdf <- merge(resdf, counties, by.x = "name_id", by.y = "countyID")
+  resdf[, name_id := county][, county := NULL]
+  if(incl.eqty) {
+    resdf <- rbind(resdf,
+                 merge(eqbuffer.df[[itype]], eqbuffer.df[["total"]], by = c("year", "indicator", "run", "name_id")))
+  }
   setnames(resdf, "estimate.x", "estimate")
   setnames(resdf, "estimate.y", "total")
   # compute deltas
-  resdf[resdf[year == 2017], `:=`(base = i.estimate, base_total = i.total), on = .(indicator, run, name_id)]
+  resdf[resdf[year == fs.byr], `:=`(base = i.estimate, base_total = i.total), on = .(indicator, run, name_id)]
   resdf[, `:=`(delta = estimate - base, delta_total = total - base_total)]
-  # merge with counties
-  resdf <- merge(resdf, counties, by.x = "name_id", by.y = "countyID")
+  
 
   # names of columns to compute shares with
   share.col.byr <- paste("share", share_attr[[itype]], fs.byr, sep = "_")
@@ -115,17 +162,17 @@ for(itype in ind.types) {
   denomin.col.delta <- paste("delta", share_attr[[itype]], fs.years, "total", sep = "_")
   
   # which columns to keep
-  repyears <- rep(c(fs.byr, fs.years), length(attributes))
+  repyears <- rep(fs.years.to.keep.int, length(attributes))
   keep.cols <- paste(attributes, repyears, sep = "_")
-  keep.cols <- c(keep.cols, paste0(keep.cols, "_total"), numer.col.delta, denomin.col.delta, "county")
+  keep.cols <- c(keep.cols, paste0(keep.cols, "_total"), numer.col.delta, denomin.col.delta, "name_id")
 
   # loop through each run and gather results
   dlist <- NULL
   for (r in 1:length(run.dir)) {
     t <- resdf[run == run.dir[r], ]
-    t[, run := NULL][, name_id := NULL]
+    t[, run := NULL]
     # convert to wide format
-    t <- dcast(t, county  ~ indicator + year, value.var = c("estimate", "total", "delta", "delta_total"
+    t <- dcast(t, name_id  ~ indicator + year, value.var = c("estimate", "total", "delta", "delta_total"
                                                             #,"share", "delta_share"
                                                             ))
     # remove the word "estimate_" from column names
@@ -139,11 +186,12 @@ for(itype in ind.types) {
     t <- t[, colnames(t) %in% keep.cols, with = FALSE]
 
     # add regional total
-    t <- rbind(t, cbind(county = "Region", t[, lapply(.SD, sum), 
+    t <- rbind(t, cbind(name_id = "Region", t[!name_id %in% c("minority", "poverty"), lapply(.SD, sum), 
                                              .SDcols = which(sapply(t, is.numeric))]))
     # include 2017 actual if needed
     if(include.actuals) 
-      t <- merge(t, do.call(paste("get.byr.actuals", itype, geo, sep = "."), list()), by = geo, sort = FALSE)
+      t <- merge(t, do.call(paste("get.byr.actuals", itype, geo, sep = "."), list()), by = "name_id", sort = FALSE, 
+                 all.x = TRUE)
 
     # compute shares
     expr1 <- parse(text = paste0(share.col.byr, " := ", numer.col.byr, "/", denomin.col.byr))
