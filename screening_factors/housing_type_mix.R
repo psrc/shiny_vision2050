@@ -81,16 +81,46 @@ for (r in 1:length(run.dir)) { # for each run
                ][, geography := switch(as.character(county_id), "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = county_id
                  ][, county_id := NULL]
   }
-
+  
+  # poverty 
+  compile.poverty <- function(table) {
+    df <- table[!is.na(res_density_type), lapply(.SD, sum), .SDcols = cols, by = .(poverty_id, res_density_type)][order(poverty_id, res_density_type)]
+    tot <- df[, lapply(.SD, sum), .SDcols = cols, by = poverty_id]
+    setnames(tot, cols, tot.cols)
+    df2 <- df[tot, on = "poverty_id"][, delta := real_residential_units - residential_units_base]
+    df2.sum.delta <- df2[, lapply(.SD, sum), .SDcols = "delta", by = poverty_id]
+    setnames(df2.sum.delta, "delta", "sum_delta")
+    df3 <- df2[df2.sum.delta, on = "poverty_id"
+               ][, geography := switch(as.character(poverty_id), "2" = "Poverty", "1" = "Non-Poverty"), by = poverty_id
+                 ][, poverty_id := NULL]
+    
+  }  
+  
+  # minority
+  compile.minority <- function(table) {
+    df <- table[!is.na(res_density_type), lapply(.SD, sum), .SDcols = cols, by = .(minority_id, res_density_type)][order(minority_id, res_density_type)]
+    tot <- df[, lapply(.SD, sum), .SDcols = cols, by = minority_id]
+    setnames(tot, cols, tot.cols)
+    df2 <- df[tot, on = "minority_id"][, delta := real_residential_units - residential_units_base]
+    df2.sum.delta <- df2[, lapply(.SD, sum), .SDcols = "delta", by = minority_id]
+    setnames(df2.sum.delta, "delta", "sum_delta")
+    df3 <- df2[df2.sum.delta, on = "minority_id"
+               ][, geography := switch(as.character(minority_id), "2" = "Minority" , "1"= "Non-minority"), by = minority_id
+                 ][, minority_id := NULL]
+  }
+  
   df.cnty <-compile.cnty(pcl)
   df.reg <- compile.region(pcl)
-  df.all <- rbindlist(list(df.cnty, df.reg), use.names = TRUE)
+  df.poverty <-compile.poverty(pcl)
+  df.minority <-compile.minority(pcl)
+  
+  df.all <- rbindlist(list(df.cnty, df.reg, df.poverty, df.minority), use.names = TRUE)
   
   df.all[, share_delta := delta/sum_delta
-             ][, `:=` (run = run.dir[r], scenario = names(run.dir[r]))
-               ][, eval(share.expr1)
-                 ][, eval(share.expr2)]
-
+         ][, `:=` (run = run.dir[r], scenario = names(run.dir[r]))
+           ][, eval(share.expr1)
+             ][, eval(share.expr2)]
+  
   setcolorder(df.all, c("geography", "run", "scenario", "res_density_type", cols[2], cols[1], rev(tot.cols), rev(share.cols), "delta", "sum_delta", "share_delta"))
   colnames(df.all)[grep("residential_units$", colnames(df.all))] <- str_replace_all(colnames(df.all)[grep("residential_units$", colnames(df.all))], 
                                                                                     "real_residential_units$", 
