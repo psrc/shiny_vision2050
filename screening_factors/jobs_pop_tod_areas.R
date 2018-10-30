@@ -13,7 +13,7 @@ if(!exists("set.globals") || !set.globals) {
   source("functions.R")
 }
 
-
+cat("\nComputing indicator 30, jobs-pop in tod areas\n")
 out.file.nm <- settings$pjta$out.file.nm 
 
 
@@ -82,11 +82,7 @@ query.gq <- function(gqfilename, geos, yrs) {
   df <- df[year %in% yrs, ][, lapply(.SD, sum), .SDcols = "gq", by = c(geos, "year")][!is.na(get(eval(geos[1]))),]
 }
 
-
-# gq.cnty <- query.gq("group_quarters_geo.xlsx", c("county_id", "tod_id"), c("2017", "2050"))
 gq <- query.gq("group_quarters_geo.xlsx", c("tod_id"), c("2017", "2050"))
-
-# mil.df.cnty <- query.military(enlist.mil.file.nm, c("county_id", "tod_id"), c("2017", "2050"))
 mil.df <- query.military(enlist.mil.file.nm, c("tod_id"), c("2017", "2050"))
 
 # actuals
@@ -99,6 +95,83 @@ ctdt <- ct[Countyname == "Region", ]
 
 
 # transform county forecast -----------------------------------------------
+
+
+compile.tod.by.county.files <- function(geog, allruns, run.dir, attributes, ind.extension) {
+  counties <- c("kin", "kit", "pie", "sno")
+  df <- NULL
+  for (r in 1:length(run.dir)) { # for each run
+    base.dir <- purrr::pluck(allruns, run.dir[r])
+    for (c in 1:length(counties)) {
+      for (a in 1:length(attributes)) { # for each attribute
+        filename <- paste0(geog,'__',"table",'__', counties[c],'_', attributes[a], ind.extension)
+        datatable <- fread(file.path(base.dir, "indicators", filename), header = TRUE, sep = ",")
+        colnames(datatable)[1] <- str_replace(colnames(datatable)[1], '\\w+_', 'name_')
+        dt <- melt.data.table(datatable, 
+                              id.vars = "name_id",
+                              measure.vars = colnames(datatable)[2: ncol(datatable)], 
+                              variable.name = "variable", value.name = "estimate")
+        dt[, `:=`(county = str_extract(variable, "^\\w{3}"),
+                  year = str_extract(variable, "[[:digit:]]+"),
+                  indicator = attributes[a],
+                  run = run.dir[r])]
+        dt[, countyname := switch(county, "kin" = "King", "kit" = "Kitsap", "pie" = "Pierce", "sno" = "Snohomish"), by = county]
+        dt[, county := switch(county, "kin" = "33", "kit" = "35", "pie" = "53", "sno" = "61"), by = county]
+        dt[, variable := NULL]
+        df <- rbindlist(list(df, dt), use.names = TRUE, fill = TRUE)
+      }
+    }
+  }
+  return(df)
+} 
+
+create.tod.by.county.table <- function() {
+  gq.cnty <- query.gq("group_quarters_geo.xlsx", c("county_id", "tod_id"), c("2017", "2050"))
+  gq.cnty[, countyname := switch(as.character(county_id), "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = county_id
+          ][, indicator := "population"]
+  mil.df.cnty <- query.military(enlist.mil.file.nm, c("county_id", "tod_id"), c("2017", "2050"))
+  mil.df.cnty[, countyname := switch(as.character(county_id), "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = county_id
+              ][, indicator := "employment"]
+  
+  # county base
+  gq.cnty2 <- gq.cnty[, lapply(.SD, sum), .SDcols = c("gq"), by = .(year, countyname, indicator)]
+  mil.df.cnty2 <- mil.df.cnty[, lapply(.SD, sum), .SDcols = c("enlist_estimate"), by = .(year, countyname, indicator)]
+  
+  df.cnty <- compile.tbl('county', allruns, run.dir, attributes, ind.extension)
+  base <- melt.data.table(df.cnty, 
+                          id.vars = c("name_id", "indicator", "run"), 
+                          measure.vars = grep("^yr\\d+", colnames(df.cnty)), variable.name = "year", value.name = "base")
+  df.base <- base[year %in% years.col,
+                  ][, year := str_extract(year, "\\d+")
+                    ][, countyname := switch(as.character(name_id), "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = name_id]
+  df.base[gq.cnty2, on = c("countyname", "year", "indicator"), gq := i.gq][is.na(gq), gq := 0]
+  df.base[mil.df.cnty2, on = c("countyname", "year", "indicator"), enlist := i.enlist_estimate][is.na(enlist), enlist := 0]
+  df.base[, base_plus := base + gq + enlist]
+  dt.base <- df.base[, .(countyname, indicator, run, year, base = base_plus)]
+  
+  # county tod
+  df <- compile.tod.by.county.files('tod', allruns, run.dir, attributes, ind.extension)
+  dt <- df[year %in% c(byr, years)]
+  dt[gq.cnty, on = c("name_id" = "tod_id", "countyname", "year", "indicator"), gq := i.gq][is.na(gq), gq := 0]
+  dt[mil.df.cnty, on = c("name_id" = "tod_id", "countyname", "year", "indicator"), enlist := i.enlist_estimate][is.na(enlist), enlist := 0]
+  dt[, estimate_plus := estimate + gq + enlist]
+  dt.tod <- dt[name_id != 0, 
+               ][, .(name_id, county, countyname, year, run, indicator, estimate = estimate_plus)
+                 ][, lapply(.SD, sum), .SDcols = c("estimate"), by = .(county, countyname, year, run, indicator)]
+  dt.tod[dt.base, on = c("indicator", "run", "year", "countyname"), base := i.base]
+  dt.tod.cast <- dcast.data.table(dt.tod, countyname + run + indicator ~ year, value.var = c("estimate", "base"))
+  delta.expr <- parse(text = paste0("delta_tod := estimate_", years, " - estimate_", byr))
+  deltareg.expr <- parse(text = paste0("delta_base := base_", years, " - base_", byr))
+  dt.tod.cast[, eval(delta.expr)][, eval(deltareg.expr)][, delta_share_in_tod := delta_tod/delta_base]
+  setnames(dt.tod.cast, paste0("estimate_", byr), "byr_tod")
+  setnames(dt.tod.cast, paste0("base_", byr), "byr_base")
+  setnames(dt.tod.cast, paste0("estimate_", years), paste0("yr", years, "_tod"))
+  setnames(dt.tod.cast, paste0("base_", years), paste0("yr", years, "_base"))
+  ct.cnty <- ct[Countyname != "Region",]
+  dt.tod.cnty <- ct.cnty[dt.tod.cast, on = c("Countyname" = "countyname", "run", "indicator")]
+  dt.tod.cnty[, (paste0(years.col[2], "_share_in_tod")) := (byr_tod_actual + delta_tod)/(get(paste0("ct_", byr)) + delta_base)]
+}
+
 
 # Regional Totals ---------------------------------------------------------
 
@@ -161,23 +234,24 @@ setnames(df7.cast, paste0("base_", years), paste0("yr", years, "_base"))
 dt <- ctdt[df7.cast, on = c("run", "indicator")]
 dt[, (paste0(years.col[2], "_share_in_tod")) := (byr_tod_actual + delta_tod)/(get(paste0("ct_", byr)) + delta_base)]
 
+dt.cnty <- create.tod.by.county.table() # county geographies
+dt.all <- rbindlist(list(dt.cnty, dt), use.names = TRUE) # bind all geographies
 
 # loop through each run
 dlist <- NULL
-# fincols <- c("tod", "region")
 fincols <- c("tod", "base")
 for (r in 1:length(run.dir)) {
   t <- NULL
-  t <- dt[run == run.dir[r], ][order(-indicator)]
-  setcolorder(t, c("Countyname", 
-                   "County", 
-                   "run", 
-                   "scenario", 
-                   "indicator", 
-                   grep("^ct", colnames(t), value = TRUE), 
-                   grep("tod_actual$", colnames(t), value = TRUE), 
-                   paste0("byr_", fincols), 
-                   paste0("yr", years, "_", fincols), 
+  t <- dt.all[run == run.dir[r], ][order(-indicator)]
+  setcolorder(t, c("Countyname",
+                   "County",
+                   "run",
+                   "scenario",
+                   "indicator",
+                   grep("^ct", colnames(t), value = TRUE),
+                   grep("tod_actual$", colnames(t), value = TRUE),
+                   paste0("byr_", fincols),
+                   paste0("yr", years, "_", fincols),
                    paste0("yr", years, "_share_in_tod"),
                    paste0("delta_", fincols), "delta_share_in_tod"))
   colnames(t)[grep("byr", colnames(t))] <- str_replace_all(colnames(t)[grep("byr", colnames(t))], "byr", paste0("yr", byr))
