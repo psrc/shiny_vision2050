@@ -137,6 +137,10 @@ sdcols <- c("actual_byr", "byr", years.col)
 sumcols <- paste0("sum_", sdcols)
 sharecols <- paste0("share_", sdcols)
 
+
+# functions ---------------------------------------------------------------
+
+
 calc.by.geog <- function(geog, atable) {
   delta.expr <- parse(text = paste0("delta := ", years.col, " - byr"))
   share.expr1 <- parse(text = paste0(sharecols[1], ":=", sdcols[1], "/", sumcols[1]))
@@ -152,6 +156,8 @@ calc.by.geog <- function(geog, atable) {
     df[, county := switch(countycode, "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = countycode]
   } else if (geog == "region") {
     df[, county := "Region"]
+  } else {
+    
   }
   d <- df[!is.na(Comp.Index), lapply(.SD, sum), .SDcols = c(sdcols), by = group.by.cols][, eval(delta.expr)]
   
@@ -178,15 +184,81 @@ calc.by.geog <- function(geog, atable) {
                                  ]
 }
 
+compile.tract.actuals.equity <- function(table) {
+  eqlu <- read.equity.lu()
+  dt <- table[eqlu, on = c("GEOID10")][, .(GEOID10, indicator, actual_byr, minority, poverty)]
+  d <- melt.data.table(dt, 
+                       id.vars = c("GEOID10", "indicator", "actual_byr"), 
+                       measure.vars = c("minority", "poverty"), variable.name = "generic_equity", value.name = "equity")
+}
+
+query.military <- function(milfilename, geos, yrs) {
+  mil <- fread(file.path(data.dir, milfilename))
+  mil <- mil[!is.na(ParcelID)]
+  enlist.lu <- as.data.table(enlist.lu)
+  milgeo <- mil[enlist.lu, on = c("Base", "Zone", "ParcelID" = "parcel_id")]
+  df <- melt.data.table(milgeo, id.vars = geos, measure.vars = grep("^\\d+", colnames(milgeo)), variable.name = "year", value.name = "enlist_estimate")
+  df <- df[year %in% yrs, ][, lapply(.SD, sum), .SDcols = "enlist_estimate", by = c(geos, "year")]
+}
+
+query.gq <- function(gqfilename, geos, yrs) {
+  gqdt <- read.xlsx(file.path(data.dir, gqfilename)) %>% as.data.table()
+  df <- melt.data.table(gqdt, id.vars = geos, measure.vars = grep("^\\d+", colnames(gqdt)), variable.name = "year", value.name = "gq_estimate")
+  df <- df[year %in% yrs, ][, lapply(.SD, sum), .SDcols = "gq_estimate", by = c(geos, "year")]
+}
+
+compile.equity.tables <- function() {
+  eqact <- compile.tract.actuals.equity(bdf)
+  edf <- compile.tbl.equity(file.regexp, allruns, run.dir, ind.extension)
+  edf[, equity := str_extract(variable, "^\\w+(?=_\\w+_\\d+)")
+            ][, `:=` (equity = str_replace(equity, "_", "-"), indicator = str_extract(variable, "[[:alpha:]]+(?=_\\d+)"))]
+  edt <- edf[year %in% c(byr, years)
+             ][tract.lu, on = c("name_id" = "census_tract_id")
+               ][, GEOID10 := as.character(geoid10)
+                 ][, .(name_id, GEOID10, run, Comp.Index, equity, indicator, year, estimate)]
+  # add gq and mil to forecast
+  # mil
+  emil <- query.military(enlist.mil.file.nm, c("census_tract_id", "minority_id", "poverty_id"), c("2017", "2050"))
+  emil[, `:=` (minority_id = as.character(minority_id), poverty_id = as.character(poverty_id))]
+  emil[, minority := switch(minority_id, "0" = "non-minority", "1" = "minority"), by = minority_id
+       ][, poverty := switch(poverty_id, "0" = "non-poverty", "1" = "poverty"), by = poverty_id
+         ][, indicator := "employment"]
+  emildt <- melt.data.table(emil, 
+                            id.vars = c("census_tract_id", "indicator", "enlist_estimate", "year"), 
+                            measure.vars = c("minority", "poverty"), variable.name = "generic_equity", value.name = "equity")
+  # gq
+  egq <- query.gq(gq.file.nm, c("census_tract_id", "minority_id", "poverty_id"), c(byr, years))
+  egq[, `:=` (minority_id = as.character(minority_id), poverty_id = as.character(poverty_id))]
+  egq[, minority := switch(minority_id, "0" = "non-minority", "1" = "minority"), by = minority_id
+       ][, poverty := switch(poverty_id, "0" = "non-poverty", "1" = "poverty"), by = poverty_id
+         ][, indicator := "population"]
+  egqdt <- melt.data.table(egq, 
+                           id.vars = c("census_tract_id", "indicator", "gq_estimate", "year"), 
+                           measure.vars = c("minority", "poverty"), variable.name = "generic_equity", value.name = "equity")
+  # join mil & gq
+  edt[emildt, on = c("GEOID10" = "census_tract_id", "indicator", "equity", "year"), enlist := i.enlist_estimate][is.na(enlist), enlist := 0]
+  edt[egqdt, on = c("GEOID10" = "census_tract_id", "indicator", "equity", "year"), gq := i.gq_estimate][is.na(gq), gq := 0]
+  edt[, estimate_plus := estimate + enlist + gq]
+  edt[eqact, on = c("GEOID10", "indicator", "equity"), actual_byr := i.actual_byr][is.na(actual_byr), actual_byr := 0]
+  dt <- dcast.data.table(edt, name_id + GEOID10 + run + Comp.Index + equity + indicator + actual_byr ~ paste0("yr", year), value.var = "estimate_plus")
+  setnames(dt, c("equity", paste0("yr", byr)), c("county", "byr"))
+}
+
+# equity expression to retrieve regional equity tables
+file.regexp <- paste0("(^census_tract).*(employment|households|population)\\.csv")
+
 df.reg <- calc.by.geog("region", df5)
 df.cnty <- calc.by.geog("county", df5)
-df9 <- rbindlist(list(df.cnty, df.reg), use.names = TRUE)
+df.equity <- compile.equity.tables()
+df.equity.all <- calc.by.geog("equity", df.equity)
+
+df.all <- rbindlist(list(df.cnty, df.equity.all, df.reg), use.names = TRUE)
 
 # loop through each run
 dlist <- NULL
 for (r in 1:length(run.dir)) {
   t <- NULL
-  t <- df9[run == run.dir[r], ][, scenario := names(run.dir[r])]
+  t <- df.all[run == run.dir[r], ][, scenario := names(run.dir[r])]
   setcolorder(t, c("county", "indicator", "Comp.Index", "run", "scenario", sdcols, sumcols, sharecols, grep("delta", colnames(t), value = TRUE)))
   setnames(t, c("Comp.Index"), c("index"))
   colnames(t)[grep("byr", colnames(t))] <- str_replace_all(colnames(t)[grep("byr", colnames(t))], "byr", paste0("yr", byr))
