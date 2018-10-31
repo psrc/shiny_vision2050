@@ -59,6 +59,8 @@ get.byr.actuals.park_buffer.county <- function() {
   act
 }
 
+row.order.base <- c("King", "Kitsap", "Pierce", "Snohomish")
+
 for(itype in ind.types) {
   cat("\nComputing indicator 28, 31 & 64 for ", itype)
   attributes <- all_attrs[[itype]]
@@ -68,7 +70,9 @@ for(itype in ind.types) {
     include.actuals <- settings[[names.conversion[[itype]]]]$include.actuals
   incl.eqty <- FALSE
   if(!is.null(include.equity[[itype]])) incl.eqty <- include.equity[[itype]]
-
+  row.order <- row.order.base
+  if(incl.eqty)
+      row.order <- c(row.order, "poverty", "non-poverty", "minority", "non-minority")
   for(buffer in c(itype, "total")) { # run twice, once for the specific buffer indicator, once for totals
     # get Opus indicators
     these.attr <- if(buffer == itype) paste(attributes,  itype, sep = "_") else attributes
@@ -102,35 +106,37 @@ for(itype in ind.types) {
       edf <- compile.tbl.equity(file.regexp, allruns, run.dir, ind.extension)
       edf[, equity := switch(name_id, `1` = paste0("non-", generic_equity), `2` = generic_equity), by = name_id
           ][, indicator := as.character(variable)] # create new field equity: 1 = non-minority/poverty, 2 = minority/poverty
-      edt <- edf[, indicator := substr(indicator, 1, nchar(indicator)-5)]
+      edf[, indicator := substr(indicator, 1, nchar(indicator)-5)]
       edt <- edf[year %in% fs.years.to.keep.int]
       if(buffer == "total") {
-        edt <- edt[, .(estimate = sum(estimate)), by = .(run, year, indicator, generic_equity)]
-      } else {
-        edt <- edt[name_id == 2][, `:=`(variable = NULL, equity = NULL)]
-      }
-      edt[, name_id := NULL]
-      setnames(edt, "generic_equity", "name_id")
+        edt[, estimate := sum(estimate), by = .(run, year, indicator, generic_equity)]
+      } 
+	  edt <- edt[, `:=`(variable = NULL, name_id = NULL, generic_equity = NULL)]
+	  setnames(edt, "equity", "name_id")
       edt[, indicator := gsub(paste0("_", itype), "", indicator)]
       
       # transform military df grouping by equity categories and add to forecast
       eqfilter1 <- eqfilter2 <- NULL
-      if(buffer  != "total") {
-        eqfilter1 <- list( quo(`==`(!!sym("minority_id"), 1)))
-        eqfilter2 <- list( quo(`==`(!!sym("poverty_id"), 1)))
-      }
+      #if(buffer  != "total") {
+      #  eqfilter1 <- list( quo(`==`(!!sym("minority_id"), 1)))
+      #  eqfilter2 <- list( quo(`==`(!!sym("poverty_id"), 1)))
+      #}
       eqmilgq1 <- compile.mil.gq("minority_id", mil.filter = eqfilter1, gq.filter = eqfilter1)
+      eqmilgq1[, equity := ifelse(name_id == 0, "non-minority", "minority")]
+      eqmilgq1[, name_id := NULL]
+      setnames(eqmilgq1, "equity", "name_id")
       eqmilgq2 <- compile.mil.gq("poverty_id", mil.filter = eqfilter2, gq.filter = eqfilter2)
+      eqmilgq2[, equity := ifelse(name_id == 0, "non-poverty", "poverty")]
+      eqmilgq2[, name_id := NULL]
+      setnames(eqmilgq2, "equity", "name_id")
       if(buffer  == "total") {
-        eqmilgq1 <- eqmilgq1[, .(estimate = sum(estimate)), by = .(year, indicator)][, name_id := 0]
-        eqmilgq2 <- eqmilgq2[, .(estimate = sum(estimate)), by = .(year, indicator)][, name_id := 0]
+        eqmilgq1 <- eqmilgq1[, estimate := sum(estimate), by = .(year, indicator)]
+        eqmilgq2 <- eqmilgq2[, estimate := sum(estimate), by = .(year, indicator)]
       }
-      eqmilgq <- rbind(eqmilgq1[,name_id := as.character(name_id)][,name_id := "minority"], 
-                       eqmilgq2[,name_id := as.character(name_id)][,name_id := "poverty"])[, year := gsub("yr", "", year)]
-      edt[, name_id := as.character(name_id)]
-      eqmmgq <- edt[eqmilgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
+      eqmilgq <- rbind(eqmilgq1, eqmilgq2)[, year := gsub("yr", "", year)]
+      edt[eqmilgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
       
-      eqbuffer.df[[buffer]] <- eqmmgq
+      eqbuffer.df[[buffer]] <- edt
     }
     
     # collect result
@@ -188,9 +194,14 @@ for(itype in ind.types) {
       colnames(t) <- gsub(replace[iattr], replace.with[iattr], colnames(t))
     # keep only relevant columns 
     t <- t[, colnames(t) %in% keep.cols, with = FALSE]
-
+    
+    # put rows into a particular order
+    t$name_id <- factor(t$name_id, levels = row.order)
+    t <- t[order(name_id)]
+    
     # add regional total
-    t <- rbind(t, cbind(name_id = "Region", t[!name_id %in% c("minority", "poverty"), lapply(.SD, sum), 
+    t <- rbind(t, cbind(name_id = "Region", t[!name_id %in% c("minority", "non-minority", "poverty", "non-poverty"), 
+                                              lapply(.SD, sum), 
                                              .SDcols = which(sapply(t, is.numeric))]))
     # include 2017 actual if needed
     if(include.actuals) 
