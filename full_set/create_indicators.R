@@ -5,7 +5,7 @@ wrk.dir <- "/Users/hana/R/vision2050indicators/full_set"
 curr.dir <- getwd()
 setwd(wrk.dir)
 
-run.screening.factors <- TRUE
+run.screening.factors <- FALSE
 
 # global settings
 source("settings.R")

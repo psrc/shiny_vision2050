@@ -121,6 +121,10 @@ for(itype in ind.types) {
       }
       eqmilgq1 <- compile.mil.gq("minority_id", mil.filter = eqfilter1, gq.filter = eqfilter1)
       eqmilgq2 <- compile.mil.gq("poverty_id", mil.filter = eqfilter2, gq.filter = eqfilter2)
+      if(buffer  == "total") {
+        eqmilgq1 <- eqmilgq1[, .(estimate = sum(estimate)), by = .(year, indicator)][, name_id := 0]
+        eqmilgq2 <- eqmilgq2[, .(estimate = sum(estimate)), by = .(year, indicator)][, name_id := 0]
+      }
       eqmilgq <- rbind(eqmilgq1[,name_id := as.character(name_id)][,name_id := "minority"], 
                        eqmilgq2[,name_id := as.character(name_id)][,name_id := "poverty"])[, year := gsub("yr", "", year)]
       edt[, name_id := as.character(name_id)]
