@@ -11,7 +11,7 @@ if(!exists("set.globals") || !set.globals) {
   source("functions.R")
 }
 
-
+cat("\nComputing indicator 17, housing type mix\n")
 out.file.nm <- settings$htm$out.file.nm
 
 # lookup table
@@ -91,7 +91,7 @@ for (r in 1:length(run.dir)) { # for each run
     df2.sum.delta <- df2[, lapply(.SD, sum), .SDcols = "delta", by = poverty_id]
     setnames(df2.sum.delta, "delta", "sum_delta")
     df3 <- df2[df2.sum.delta, on = "poverty_id"
-               ][, geography := switch(as.character(poverty_id), "2" = "Poverty", "1" = "Non-Poverty"), by = poverty_id
+               ][, geography := switch(as.character(poverty_id), "2" = "poverty", "1" = "non-poverty"), by = poverty_id
                  ][, poverty_id := NULL]
     
   }  
@@ -105,7 +105,7 @@ for (r in 1:length(run.dir)) { # for each run
     df2.sum.delta <- df2[, lapply(.SD, sum), .SDcols = "delta", by = minority_id]
     setnames(df2.sum.delta, "delta", "sum_delta")
     df3 <- df2[df2.sum.delta, on = "minority_id"
-               ][, geography := switch(as.character(minority_id), "2" = "Minority" , "1"= "Non-minority"), by = minority_id
+               ][, geography := switch(as.character(minority_id), "2" = "minority" , "1"= "non-minority"), by = minority_id
                  ][, minority_id := NULL]
   }
   
@@ -121,12 +121,18 @@ for (r in 1:length(run.dir)) { # for each run
            ][, eval(share.expr1)
              ][, eval(share.expr2)]
   
-  setcolorder(df.all, c("geography", "run", "scenario", "res_density_type", cols[2], cols[1], rev(tot.cols), rev(share.cols), "delta", "sum_delta", "share_delta"))
+  setcolorder(df.all, 
+              c("geography", "run", "scenario", "res_density_type", cols[2], cols[1], rev(tot.cols), rev(share.cols), "delta", "sum_delta", "share_delta"))
   colnames(df.all)[grep("residential_units$", colnames(df.all))] <- str_replace_all(colnames(df.all)[grep("residential_units$", colnames(df.all))], 
                                                                                     "real_residential_units$", 
                                                                                     paste0("residential_units_yr", years))
+  counties <- c("King", "Kitsap", "Pierce", "Snohomish")
+  countyname.sort <- c(counties, "poverty", "non-poverty", "minority", "non-minority", "Region")
+  dt.all <- df.all[, county.sort := factor(geography, levels = countyname.sort)
+                   ][order(county.sort)
+                     ][, `:=`(county.sort = NULL)]
   
-  dlist[[names(run.dir[r])]] <- df.all
+  dlist[[names(run.dir[r])]] <- dt.all
 }
 
 

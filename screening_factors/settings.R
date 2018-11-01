@@ -23,7 +23,9 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
 #              Modelsrv3 = "//modelsrv3/e$/opusgit/urbansim_data/data/psrc_parcel/runs"
 # )
 
-run.dir <- c("STC" = "run_3.run_2018_08_17_13_06"#,
+run.dir <- c(#"STC" = "run_3.run_2018_08_17_13_06"#,
+             "STC" = "run_6.run_2018_10_23_11_15",
+             "RUG" = "run_5.run_2018_10_25_09_07"
              # "DUG" = "run_4.run_2018_10_02_11_57",
              # "DUG-JH" = "run_1.run_2018_10_01_20_37",
              # "H2O2" = "run_6.run_2018_10_02_12_01",

@@ -177,11 +177,11 @@ calc.by.geog <- function(geog, atable) {
                    ][, eval(share.expr2)
                      ][, eval(share.expr3)
                        ][, share_delta := delta/sum_delta
-                         ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
-                           ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
-                             ][order(indicator.sort, Comp.Index.sort)
-                               ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL)
-                                 ]
+                         ]#[, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
+                           # ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
+                           #   ][order(indicator.sort, Comp.Index.sort)
+                           #     ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL)
+                           #       ]
 }
 
 compile.tract.actuals.equity <- function(table) {
@@ -253,12 +253,19 @@ df.equity <- compile.equity.tables()
 df.equity.all <- calc.by.geog("equity", df.equity)
 
 df.all <- rbindlist(list(df.cnty, df.equity.all, df.reg), use.names = TRUE)
+counties <- c("King", "Kitsap", "Pierce", "Snohomish")
+countyname.sort <- c(counties, "poverty", "non-poverty", "minority", "non-minority", "Region")
+dt.all <- df.all[, county.sort := factor(county, levels = countyname.sort)
+                 ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
+                   ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
+                     ][order(indicator.sort, county.sort, Comp.Index.sort)
+                       ][, `:=`(county.sort = NULL, indicator.sort = NULL, Comp.Index.sort = NULL)]
 
 # loop through each run
 dlist <- NULL
 for (r in 1:length(run.dir)) {
   t <- NULL
-  t <- df.all[run == run.dir[r], ][, scenario := names(run.dir[r])]
+  t <- dt.all[run == run.dir[r], ][, scenario := names(run.dir[r])]
   setcolorder(t, c("county", "indicator", "Comp.Index", "run", "scenario", sdcols, sumcols, sharecols, grep("delta", colnames(t), value = TRUE)))
   setnames(t, c("Comp.Index"), c("index"))
   colnames(t)[grep("byr", colnames(t))] <- str_replace_all(colnames(t)[grep("byr", colnames(t))], "byr", paste0("yr", byr))

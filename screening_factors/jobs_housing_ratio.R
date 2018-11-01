@@ -201,7 +201,7 @@ for (r in 1:length(run.dir)) {
   t <- dt[run == run.dir[r],]
   t[, `:=` (ehindex_byr = (ehratio_byr/(t[subarea_name == "Region", ehratio_byr])))][, eval(ind.expr)][, scenario := names(run.dir[r])]
   roworder <- c("King", "Sea-Shore", "South King", "East King", "Kitsap", "Pierce", "Snohomish", 
-                "minority", "non-minority", "poverty", "non-poverty", "Region")
+                "poverty", "non-poverty", "minority", "non-minority", "Region")
   t2 <- t[match(roworder, t$subarea_name)]
   setcolorder(t2, c("cnty_name", 
                     "subarea_name", 
