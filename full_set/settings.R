@@ -12,9 +12,9 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
              Aws08 = file.path(rund, "awsmodel08")
             )
 script.dir <- "/Users/hana/R/vision2050indicators/full_set"
-run.dir <- c("STC" = "run_6.run_2018_10_23_11_15",
-             "RUG" = "run_5.run_2018_10_25_09_07"
-              #"STC" = "run_3.run_2018_08_17_13_06"#,
+run.dir <- c(#"STC" = "run_6.run_2018_10_23_11_15",
+             # "RUG" = "run_5.run_2018_10_25_09_07",
+             "TOD" = "run_8.run_2018_10_29_15_01"#,
              # "DUG" = "run_4.run_2018_10_02_11_57", 
              # "H2O2" = "run_6.run_2018_10_02_12_01",
              # "TOD" = "run_3.run_2018_10_02_14_30",
@@ -32,8 +32,8 @@ bdir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support"
 # bdir <- "J:/Projects/V2050/SEIS/Data_Support"
 
 data.dir <- file.path(bdir, "script_input")
-#out.dir <- file.path(bdir, "Model_Output/Working")
-out.dir <- file.path(bdir, "Model_Output") # for final outputs 
+# out.dir <- file.path(bdir, "Model_Output/Working")
+out.dir <- file.path(bdir, "Model_Output") # for final outputs
 out.dir.maps <- file.path(out.dir, "Maps")
 out.dir.maps <- file.path(bdir, "Model_Output", "Maps")
 
@@ -75,6 +75,9 @@ gq.file2 <- process.colnames(gq.file2)
 # gq.file.sup <- process.colnames(gq.file.sup)
 # miscols <- setdiff(colnames(gq.file.sup), colnames(gq.file2))
 # gq.file2 <- merge(gq.file2, gq.file.sup[, c("record", miscols)], by = "record")
+
+# for Christy's scripts
+eqlu.file <- read.xlsx(file.path(data.dir, "2015-and-2016-5yr-ACS-Equity-Populations-20181009.xlsx"), sheet = "acs5yr_2016") %>% as.data.table
 
 # Script-specific settings
 settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),

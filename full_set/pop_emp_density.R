@@ -1,6 +1,7 @@
 # Indicator 22 & 29: population and employment density per acre (for maps)
 
 library(data.table)
+library(foreign)
 
 if(!exists("set.globals") || !set.globals) {
   script.dir <- "/Users/hana/R/vision2050indicators/full_set"
