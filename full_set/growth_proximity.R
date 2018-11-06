@@ -108,19 +108,20 @@ for(itype in ind.types) {
           ][, indicator := as.character(variable)] # create new field equity: 1 = non-minority/poverty, 2 = minority/poverty
       edf[, indicator := substr(indicator, 1, nchar(indicator)-5)]
       edt <- edf[year %in% fs.years.to.keep.int]
-      if(buffer == "total") {
-        edt[, estimate := sum(estimate), by = .(run, year, indicator, generic_equity)]
-      } 
+      #if(buffer == "total") {
+      #  edt[, estimate := sum(estimate), by = .(run, year, indicator, generic_equity)]
+      #} 
 	  edt <- edt[, `:=`(variable = NULL, name_id = NULL, generic_equity = NULL)]
 	  setnames(edt, "equity", "name_id")
       edt[, indicator := gsub(paste0("_", itype), "", indicator)]
       
       # transform military df grouping by equity categories and add to forecast
       eqfilter1 <- eqfilter2 <- NULL
-      #if(buffer  != "total") {
+      if(buffer  != "total") {
+          eqfilter1 <- eqfilter2 <- filter
       #  eqfilter1 <- list( quo(`==`(!!sym("minority_id"), 1)))
       #  eqfilter2 <- list( quo(`==`(!!sym("poverty_id"), 1)))
-      #}
+      }
       eqmilgq1 <- compile.mil.gq("minority_id", mil.filter = eqfilter1, gq.filter = eqfilter1)
       eqmilgq1[, equity := ifelse(name_id == 0, "non-minority", "minority")]
       eqmilgq1[, name_id := NULL]
@@ -129,10 +130,10 @@ for(itype in ind.types) {
       eqmilgq2[, equity := ifelse(name_id == 0, "non-poverty", "poverty")]
       eqmilgq2[, name_id := NULL]
       setnames(eqmilgq2, "equity", "name_id")
-      if(buffer  == "total") {
-        eqmilgq1 <- eqmilgq1[, estimate := sum(estimate), by = .(year, indicator)]
-        eqmilgq2 <- eqmilgq2[, estimate := sum(estimate), by = .(year, indicator)]
-      }
+      #if(buffer  == "total") {
+      #  eqmilgq1 <- eqmilgq1[, estimate := sum(estimate), by = .(year, indicator)]
+      #  eqmilgq2 <- eqmilgq2[, estimate := sum(estimate), by = .(year, indicator)]
+      #}
       eqmilgq <- rbind(eqmilgq1, eqmilgq2)[, year := gsub("yr", "", year)]
       edt[eqmilgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
       

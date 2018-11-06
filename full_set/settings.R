@@ -12,8 +12,8 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
              Aws08 = file.path(rund, "awsmodel08")
             )
 script.dir <- "/Users/hana/R/vision2050indicators/full_set"
-run.dir <- c(#"STC" = "run_6.run_2018_10_23_11_15",
-             # "RUG" = "run_5.run_2018_10_25_09_07",
+run.dir <- c("STC" = "run_6.run_2018_10_23_11_15",
+             "RUG" = "run_5.run_2018_10_25_09_07",
              "TOD" = "run_8.run_2018_10_29_15_01"#,
              # "DUG" = "run_4.run_2018_10_02_11_57", 
              # "H2O2" = "run_6.run_2018_10_02_12_01",
@@ -29,11 +29,12 @@ indicator.dirnm <- "indicators"
 
 # base directory used for various inputs and outputs
 bdir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support"
+bdir <- "~/DataTeam/Projects/V2050/SEIS/Data_Support"
 # bdir <- "J:/Projects/V2050/SEIS/Data_Support"
 
 data.dir <- file.path(bdir, "script_input")
-# out.dir <- file.path(bdir, "Model_Output/Working")
-out.dir <- file.path(bdir, "Model_Output") # for final outputs
+ out.dir <- file.path(bdir, "Model_Output/Working")
+#out.dir <- file.path(bdir, "Model_Output") # for final outputs
 out.dir.maps <- file.path(out.dir, "Maps")
 out.dir.maps <- file.path(bdir, "Model_Output", "Maps")
 
