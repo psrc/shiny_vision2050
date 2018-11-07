@@ -1,4 +1,5 @@
 library(openxlsx)
+library(magrittr)
 
 # base indicator directory (L drive)
 rund <- "/Volumes/Model\ Data/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs"

@@ -87,18 +87,21 @@ for(itype in ind.types) {
     # remove irrelevant years
     dfm <- dfm[year %in% fs.years.to.keep & name_id > 0]
   
+    # remove the name of the buffer from the indicator, e.g. "population_park_buffer" is replaced with "population"
+    dfm[, indicator := gsub(paste0("_", itype), "", indicator)]
+    
     # add military and GQ
     filter <- NULL
     if(buffer  != "total")
       filter <- list( quo(`==`(!!sym(paste0(itype, "_id")), 1))) # filter records with buffer_id being one
     milgq <- compile.mil.gq(geo.id, mil.filter = filter, gq.filter = filter)
-    dfmmgq <- dfm[milgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
+   
+    # join the two datasets
+    dfm[milgq, estimate := estimate + i.estimate, on = c("name_id", "indicator", "year")]
     
     # remove "yr" from year values
-    dfmmgq[, year := gsub("yr", "", year)]
+    dfm[, year := gsub("yr", "", year)]
     
-    # remove the name of the buffer from the indicator, e.g. "population_park_buffer" is replaced with "population"
-    dfmmgq[, indicator := gsub(paste0("_", itype), "", indicator)]
     
     # get equity data
     if(incl.eqty) {
@@ -141,7 +144,7 @@ for(itype in ind.types) {
     }
     
     # collect result
-    buffer.df[[buffer]] <- dfmmgq
+    buffer.df[[buffer]] <- dfm
   }
   
   # merge buffer and totals  
