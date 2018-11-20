@@ -27,14 +27,15 @@ out.file.nm <- list(transit_buffer = settings$gpro$out.file.nm.a, # "28a_transit
 		                )
 all_attrs <- list(transit_buffer = c("population", "employment", "activity_units"),
 	     	          uga_buffer = c("population", "employment", "activity_units"),
-		              park_buffer = c("population", "employment", "activity_units"),
+		              park_buffer = c("population"#, "employment", "activity_units"
+		                              ),
 		              growth_amenities = "population"#,
 		              # sewer_buffer = c("population", "employment", "activity_units")
 		              )
 # which attributes to use for computing shares
 share_attr <- list(transit_buffer = "activity_units",
                    uga_buffer = "activity_units", 
-                   park_buffer = "activity_units", 
+                   park_buffer = "population", 
                    growth_amenities = "population"#,
                    # sewer_buffer = "activity_units"
                    )
@@ -44,18 +45,22 @@ include.equity <- list(transit_buffer = settings$gpro$include.equity[1],
                        growth_amenities = settings$gamn$include.equity)
 
 ind.types <- names(all_attrs)
-# ind.types <- "park_buffer"
+ind.types <- "park_buffer"
 
 geo <- "county"
 geo.id <- paste0(geo, "_id")
 
 get.byr.actuals.park_buffer.county <- function() {
-  act <- data.table(read.xlsx(file.path(data.dir, "64_parks_access_2017.xlsx"), sheet = "Sheet1"))
-  colnames(act) <- c("name_id", "employment_2017_actual", "military", "population_2017_actual",
-                     "activity_units_2017_actual", "employment_2017_actual_total", 
-                     "population_2017_total_actual", "activity_units_2017_total_actual")
-  act[, employment_2017_actual := employment_2017_actual + military]
-  act[, military := NULL]
+  #act <- data.table(read.xlsx(file.path(data.dir, "64_parks_access_2017.xlsx"), sheet = "Sheet1"))
+  #colnames(act) <- c("name_id", "employment_2017_actual", "military", "population_2017_actual",
+  #                   "activity_units_2017_actual", "employment_2017_actual_total", 
+  #                   "population_2017_total_actual", "activity_units_2017_total_actual")
+  #act[, employment_2017_actual := employment_2017_actual + military]
+  #act[, military := NULL]
+  act <- data.table(read.xlsx(file.path(data.dir, "62_parks_access_2017.xlsx")))
+  colnames(act) <- c("name_id", "population_2017_actual", "population_2017_total_actual")
+  act[, population_2017_actual := round(population_2017_actual)]
+  act[, population_2017_total_actual := round(population_2017_total_actual)]
   act
 }
 
@@ -63,19 +68,23 @@ row.order.base <- c("King", "Kitsap", "Pierce", "Snohomish")
 
 for(itype in ind.types) {
   cat("\nComputing indicator 28, 31 & 64 for ", itype)
+  settngs <- settings[[names.conversion[[itype]]]]
   attributes <- all_attrs[[itype]]
   buffer.df <- eqbuffer.df <- NULL
   include.actuals <- FALSE
-  if(!is.null(settings[[names.conversion[[itype]]]]$include.actuals)) 
-    include.actuals <- settings[[names.conversion[[itype]]]]$include.actuals
+  if(!is.null(settngs$include.actuals)) 
+    include.actuals <- settngs$include.actuals
   incl.eqty <- FALSE
   if(!is.null(include.equity[[itype]])) incl.eqty <- include.equity[[itype]]
+  totsuffix <- ""
+  if(!is.null(settngs$total.suffix))
+    totsuffix <- settngs$total.suffix
   row.order <- row.order.base
   if(incl.eqty)
       row.order <- c(row.order, "poverty", "non-poverty", "minority", "non-minority")
   for(buffer in c(itype, "total")) { # run twice, once for the specific buffer indicator, once for totals
     # get Opus indicators
-    these.attr <- if(buffer == itype) paste(attributes,  itype, sep = "_") else attributes
+    these.attr <- if(buffer == itype) paste(attributes,  itype, sep = "_") else paste0(attributes, totsuffix)
     alldata <- compile.tbl(geo, allruns, run.dir, these.attr, ind.extension)
     
     # convert to long format
@@ -88,12 +97,16 @@ for(itype in ind.types) {
     dfm <- dfm[year %in% fs.years.to.keep & name_id > 0]
   
     # remove the name of the buffer from the indicator, e.g. "population_park_buffer" is replaced with "population"
-    dfm[, indicator := gsub(paste0("_", itype), "", indicator)]
+    dfm[, indicator := gsub(paste0("_(", paste(c(names(names.conversion), "inside_ugb"), collapse = "|"), ")"), "", indicator)]
     
     # add military and GQ
     filter <- NULL
-    if(buffer  != "total")
-      filter <- list( quo(`==`(!!sym(paste0(itype, "_id")), 1))) # filter records with buffer_id being one
+    if(!is.null(settngs$milgq.filter)) filter <- settngs$milgq.filter[[buffer]]
+    else {
+      # default filter
+      if(buffer  != "total")
+        filter <- list( quo(`==`(!!sym(paste0(itype, "_id")), 1))) # filter records with buffer_id being one
+    }
     milgq <- compile.mil.gq(geo.id, mil.filter = filter, gq.filter = filter)
    
     # join the two datasets
@@ -116,14 +129,18 @@ for(itype in ind.types) {
       #} 
 	  edt <- edt[, `:=`(variable = NULL, name_id = NULL, generic_equity = NULL)]
 	  setnames(edt, "equity", "name_id")
-      edt[, indicator := gsub(paste0("_", itype), "", indicator)]
+      edt[, indicator := gsub(paste0("(", paste(c("_inside_ugb", "minority_", "poverty_", 
+                                                  paste0("_", names(names.conversion))), collapse = "|"), ")"), "", indicator)]
       
       # transform military df grouping by equity categories and add to forecast
       eqfilter1 <- eqfilter2 <- NULL
-      if(buffer  != "total") {
-          eqfilter1 <- eqfilter2 <- filter
-      #  eqfilter1 <- list( quo(`==`(!!sym("minority_id"), 1)))
-      #  eqfilter2 <- list( quo(`==`(!!sym("poverty_id"), 1)))
+      if(!is.null(settngs$eq.milgq.filter)) eqfilter1 <- eqfilter2 <- settngs$eq.milgq.filter[[buffer]]
+      else {
+        if(buffer  != "total") {
+            eqfilter1 <- eqfilter2 <- filter
+        #  eqfilter1 <- list( quo(`==`(!!sym("minority_id"), 1)))
+        #  eqfilter2 <- list( quo(`==`(!!sym("poverty_id"), 1)))
+        }
       }
       eqmilgq1 <- compile.mil.gq("minority_id", mil.filter = eqfilter1, gq.filter = eqfilter1)
       eqmilgq1[, equity := ifelse(name_id == 0, "non-minority", "minority")]

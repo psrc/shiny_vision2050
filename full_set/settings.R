@@ -1,5 +1,6 @@
 library(openxlsx)
 library(magrittr)
+library(dplyr)
 
 # base indicator directory (L drive)
 rund <- "/Volumes/Model\ Data/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs"
@@ -30,7 +31,7 @@ indicator.dirnm <- "indicators"
 
 # base directory used for various inputs and outputs
 bdir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support"
-bdir <- "~/DataTeam/Projects/V2050/SEIS/Data_Support"
+#bdir <- "~/DataTeam/Projects/V2050/SEIS/Data_Support"
 # bdir <- "J:/Projects/V2050/SEIS/Data_Support"
 
 data.dir <- file.path(bdir, "script_input")
@@ -93,7 +94,13 @@ settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
                              out.file.nm.b = "28b_uga_proximity", 
                              include.equity = c(TRUE, FALSE)),
 		            park = list(out.file.nm = "64_buffered_parks", 
-		                        include.actuals = TRUE, include.equity = TRUE),
+		                        include.actuals = TRUE, include.equity = TRUE,
+		                        total.suffix = "_inside_ugb",
+		                        milgq.filter = list(park_buffer = list( quo(`==`(!!sym("park_buffer_id"), 1))),
+		                                            total = list( quo(`==`(!!sym("inside_ugb"), 1)))),
+		                        eq.milgq.filter = list(park_buffer = list( quo(`==`(!!sym("park_buffer_id"), 1))),
+		                                            total = list( quo(`==`(!!sym("inside_ugb"), 1))))
+		                      ),
 		            gamn = list(out.file.nm = "31_growth_amentities", include.equity = TRUE),
 		            sewr = list(out.file.nm = "58_sewer_proximity")
             )
