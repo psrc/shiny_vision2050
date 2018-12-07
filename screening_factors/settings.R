@@ -25,7 +25,8 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
 
 run.dir <- c(#"STC" = "run_3.run_2018_08_17_13_06"#,
              "STC" = "run_6.run_2018_10_23_11_15",
-             "RUG" = "run_5.run_2018_10_25_09_07"
+             "RUG" = "run_5.run_2018_10_25_09_07",
+             "TOD" = "run_8.run_2018_10_29_15_01"
              # "DUG" = "run_4.run_2018_10_02_11_57",
              # "DUG-JH" = "run_1.run_2018_10_01_20_37",
              # "H2O2" = "run_6.run_2018_10_02_12_01",
@@ -36,8 +37,8 @@ run.dir <- c(#"STC" = "run_3.run_2018_08_17_13_06"#,
              # "DW-JH" = "run_13.run_2018_10_11_13_14"
              )
 
-out.dir <- "X:/DSA/Vision2050/land_use_tables"
-# out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Model_Output"
+# out.dir <- "X:/DSA/Vision2050/land_use_tables"
+out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Model_Output"
 # out.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/scripts_results"
           
 data.dir <- "J:/Projects/V2050/SEIS/Data_Support/script_input"
@@ -58,8 +59,8 @@ eqlu.file <- read.xlsx(file.path(data.dir, "2015-and-2016-5yr-ACS-Equity-Populat
 settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
                  htm = list(out.file.nm = "17_housing_type_mix"),
                  pjta = list(out.file.nm = "30_jobs_pop_tod_areas"),
-                 jhr = list(out.file.nm = "18_jobs_housing_ratio")
-                 ) 
+                 jhr = list(out.file.nm = "18_jobs_housing_ratio"),
+                 ard = list(out.file.nm = "80_areas_risk_displacement")) 
 
 source("all_runs.R")
 

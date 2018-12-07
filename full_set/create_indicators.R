@@ -1,11 +1,11 @@
 # main file for generating all indicators
 
-wrk.dir <- "/Users/hana/R/vision2050indicators/full_set"
-# wrk.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/full_set"
+# wrk.dir <- "/Users/hana/R/vision2050indicators/full_set"
+wrk.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/full_set"
 curr.dir <- getwd()
 setwd(wrk.dir)
 
-run.screening.factors <- TRUE
+run.screening.factors <- FALSE
 
 # global settings
 source("settings.R")
@@ -23,9 +23,9 @@ if(run.screening.factors) {
   source("../screening_factors/jobs_pop_tod_areas.R") # 30
   setwd(wrk.dir)
 }
-#source("allocation_pop_emp_au.R") # 16; gridcell indicator (does not need to be run every time)
-source("pop_emp_density.R") # 22 & 29; gridcell indicators (do not need to be run every time)
-source("growth_proximity.R") # 28a & 28b, 31, 64
+source("allocation_pop_emp_au.R") # 16; gridcell indicator (does not need to be run every time)
+# source("pop_emp_density.R") # 22 & 29; gridcell indicators (do not need to be run every time)
+# source("growth_proximity.R") # 28a & 28b, 31, 64
 
 # cleanup
 rm(set.globals)

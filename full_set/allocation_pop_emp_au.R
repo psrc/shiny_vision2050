@@ -13,8 +13,8 @@ if(!exists("set.globals") || !set.globals) {
 
 out.file.nm <- settings$alloc$out.file.nm
 
-geos <- c("city", "hex") # city is actually aggregated to fips_rgs
-# geos <- "hex"
+# geos <- c("city", "hex") # city is actually aggregated to fips_rgs
+geos <- "hex"
 attributes <- c("population", "employment", "activity_units")
 ind.extension <- ".csv"
 
