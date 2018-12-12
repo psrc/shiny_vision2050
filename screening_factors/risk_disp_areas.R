@@ -90,49 +90,12 @@ gq <- gq.file %>%
   mutate(indicator = "population") %>%
   as.data.table
 
-# general -----------------------------------------------------------------
-
-og.comp.ind <- fread(file.path(data.dir, "displacement-risk-level-20181206.csv"), stringsAsFactors = FALSE)
-setnames(og.comp.ind, c(colnames(og.comp.ind)[1], colnames(og.comp.ind)[4]), c("geoid10", "Comp.Index"))
-usim.blu <- fread(file.path(data.dir, "tract_opportunity_lookup.csv"), stringsAsFactors = FALSE)
-tract.lu <- og.comp.ind[usim.blu, on = "geoid10", `:=`(census_tract_id = i.census_tract_id)]
+# General -----------------------------------------------------------
 
 years.col <- paste0("yr", years)
 
 attributes <- c("population", "employment", "households")
 ind.extension <- ".csv"
-
-
-# transform data ----------------------------------------------------------
-
-opp.levels <- c("low", "medium", "high")
-
-alldata <- compile.tbl("census_tract", allruns, run.dir, attributes, ind.extension)
-
-df2 <- melt.data.table(alldata,
-                       id.vars = c("name_id", "run", "indicator"),
-                       measure.vars = grep("yr", colnames(alldata), value = TRUE),
-                       variable.name = "year", value.name = "estimate")
-df3 <- df2[year %in% years.cols
-           ][tract.lu, on = c("name_id" = "census_tract_id")
-             ][, GEOID10 := as.character(geoid10)
-               ][, .(name_id, GEOID10, run, Comp.Index, indicator, year, estimate)]
-
-# add enlisted to forecast employment df
-fcast.mil.df <- mil.df %>% 
-  filter(year %in% years.cols) %>% 
-  select(census_tract_id, year, enlist_estimate) %>% 
-  mutate(indicator = "employment") %>%
-  as.data.table
-
-df3[fcast.mil.df, on = c("GEOID10" = "census_tract_id", "year", "indicator"), enlist := i.enlist_estimate][is.na(enlist), enlist := 0]
-df3[gq, on = c("GEOID10" = "census_tract_id", "year", "indicator"), gq := i.gq_estimate][is.na(gq), gq := 0]
-df3[bdf, on = c("GEOID10", "indicator"), actual_byr := i.actual_byr]
-df3[, estimate_plus := estimate + enlist + gq]
-df4 <- df3[, .(name_id, GEOID10, run, Comp.Index, indicator, year, actual_byr, estimate = estimate_plus)]
-
-df5 <- dcast.data.table(df4, name_id + GEOID10 + run + Comp.Index + indicator + actual_byr ~ year, value.var = "estimate")
-setnames(df5, years.cols[1], "byr")
 
 sdcols <- c("actual_byr", "byr", years.col)
 sumcols <- paste0("sum_", sdcols)
@@ -173,11 +136,7 @@ calc.by.geog <- function(geog, atable) {
                    ][, eval(share.expr2)
                      ][, eval(share.expr3)
                        ][, share_delta := delta/sum_delta
-                         ]#[, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
-                           # ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
-                           #   ][order(indicator.sort, Comp.Index.sort)
-                           #     ][, `:=` (indicator.sort = NULL, Comp.Index.sort = NULL)
-                           #       ]
+                         ]
 }
 
 compile.tract.actuals.equity <- function(table) {
@@ -243,37 +202,79 @@ compile.equity.tables <- function() {
 # equity expression to retrieve regional equity tables
 file.regexp <- paste0("(^census_tract).*(employment|households|population)\\.csv")
 
-df.reg <- calc.by.geog("region", df5)
-df.cnty <- calc.by.geog("county", df5)
-df.equity <- compile.equity.tables()
-df.equity.all <- calc.by.geog("equity", df.equity)
+sheets <- c("top10", "top5")
+for (sheet in sheets) {
+  cat("\nComputing indicator 80,", sheet, "\n")
+  og.comp.ind.name <- "displacement-risk-level-20181211.xlsx" #"displacement-risk-level-20181206.csv"
+  og.comp.ind <- read.xlsx(file.path(data.dir, og.comp.ind.name), sheet = sheet) %>% as.data.table #, stringsAsFactors = FALSE
+  setnames(og.comp.ind, c(colnames(og.comp.ind)[1], colnames(og.comp.ind)[4]), c("geoid10", "Comp.Index"))
+  usim.blu <- fread(file.path(data.dir, "tract_opportunity_lookup.csv"), stringsAsFactors = FALSE)
+  tract.lu <- og.comp.ind[usim.blu, on = "geoid10", `:=`(census_tract_id = i.census_tract_id)]
+  
+  # transform data ----------------------------------------------------------
+  
+  opp.levels <- c("low", "medium", "high")
+  
+  alldata <- compile.tbl("census_tract", allruns, run.dir, attributes, ind.extension)
+  
+  df2 <- melt.data.table(alldata,
+                         id.vars = c("name_id", "run", "indicator"),
+                         measure.vars = grep("yr", colnames(alldata), value = TRUE),
+                         variable.name = "year", value.name = "estimate")
+  df3 <- df2[year %in% years.cols
+             ][tract.lu, on = c("name_id" = "census_tract_id")
+               ][, GEOID10 := as.character(geoid10)
+                 ][, .(name_id, GEOID10, run, Comp.Index, indicator, year, estimate)]
+  
+  # add enlisted to forecast employment df
+  fcast.mil.df <- mil.df %>% 
+    filter(year %in% years.cols) %>% 
+    select(census_tract_id, year, enlist_estimate) %>% 
+    mutate(indicator = "employment") %>%
+    as.data.table
+  
+  df3[fcast.mil.df, on = c("GEOID10" = "census_tract_id", "year", "indicator"), enlist := i.enlist_estimate][is.na(enlist), enlist := 0]
+  df3[gq, on = c("GEOID10" = "census_tract_id", "year", "indicator"), gq := i.gq_estimate][is.na(gq), gq := 0]
+  df3[bdf, on = c("GEOID10", "indicator"), actual_byr := i.actual_byr]
+  df3[, estimate_plus := estimate + enlist + gq]
+  df4 <- df3[, .(name_id, GEOID10, run, Comp.Index, indicator, year, actual_byr, estimate = estimate_plus)]
+  
+  df5 <- dcast.data.table(df4, name_id + GEOID10 + run + Comp.Index + indicator + actual_byr ~ year, value.var = "estimate")
+  setnames(df5, years.cols[1], "byr")
 
-df.all <- rbindlist(list(df.cnty, df.equity.all, df.reg), use.names = TRUE)
-counties <- c("King", "Kitsap", "Pierce", "Snohomish")
-countyname.sort <- c(counties, "poverty", "non-poverty", "minority", "non-minority", "Region")
-dt.all <- df.all[, county.sort := factor(county, levels = countyname.sort)
-                 ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
-                   ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
-                     ][order(indicator.sort, county.sort, Comp.Index.sort)
-                       ][, `:=`(county.sort = NULL, indicator.sort = NULL, Comp.Index.sort = NULL)]
-
-# loop through each run
-dlist <- NULL
-for (r in 1:length(run.dir)) {
-  t <- NULL
-  t <- dt.all[run == run.dir[r], ][, scenario := names(run.dir[r])]
-  setcolorder(t, c("county", "indicator", "Comp.Index", "run", "scenario", sdcols, sumcols, sharecols, grep("delta", colnames(t), value = TRUE)))
-  setnames(t, c("Comp.Index"), c("index"))
-  colnames(t)[grep("byr", colnames(t))] <- str_replace_all(colnames(t)[grep("byr", colnames(t))], "byr", paste0("yr", byr))
-  setnames(t, colnames(t)[grep("actual", colnames(t))], c(paste0(c("", "sum_", "share_"),  paste0(years.cols[1], "_actual"))))
-  t[, (paste0("share_", years.cols[1])) := NULL][] # exclude share modeled byr; only shares for actual byr needed
-  dlist[[names(run.dir[r])]] <- t
-}
-
+  df.reg <- calc.by.geog("region", df5)
+  df.cnty <- calc.by.geog("county", df5)
+  df.equity <- compile.equity.tables()
+  df.equity.all <- calc.by.geog("equity", df.equity)
+  
+  df.all <- rbindlist(list(df.cnty, df.equity.all, df.reg), use.names = TRUE)
+  counties <- c("King", "Kitsap", "Pierce", "Snohomish")
+  countyname.sort <- c(counties, "poverty", "non-poverty", "minority", "non-minority", "Region")
+  dt.all <- df.all[, county.sort := factor(county, levels = countyname.sort)
+                   ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
+                     ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
+                       ][order(indicator.sort, county.sort, Comp.Index.sort)
+                         ][, `:=`(county.sort = NULL, indicator.sort = NULL, Comp.Index.sort = NULL)]
+  
+  # loop through each run
+  dlist <- NULL
+  for (r in 1:length(run.dir)) {
+    t <- NULL
+    t <- dt.all[run == run.dir[r], ][, scenario := names(run.dir[r])]
+    setcolorder(t, c("county", "indicator", "Comp.Index", "run", "scenario", sdcols, sumcols, sharecols, grep("delta", colnames(t), value = TRUE)))
+    setnames(t, c("Comp.Index"), c("index"))
+    colnames(t)[grep("byr", colnames(t))] <- str_replace_all(colnames(t)[grep("byr", colnames(t))], "byr", paste0("yr", byr))
+    setnames(t, colnames(t)[grep("actual", colnames(t))], c(paste0(c("", "sum_", "share_"),  paste0(years.cols[1], "_actual"))))
+    t[, (paste0("share_", years.cols[1])) := NULL][] # exclude share modeled byr; only shares for actual byr needed
+    dlist[[names(run.dir[r])]] <- t
+  }
+  
+  write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm, "_", sheet, "_", Sys.Date(), ".xlsx")))
+} # end sheets loop
 
 # export ------------------------------------------------------------------
 
-write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
+
 
 setwd(curr.dir)
 
