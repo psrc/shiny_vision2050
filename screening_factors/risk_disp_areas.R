@@ -202,10 +202,10 @@ compile.equity.tables <- function() {
 # equity expression to retrieve regional equity tables
 file.regexp <- paste0("(^census_tract).*(employment|households|population)\\.csv")
 
-sheets <- c("top10", "top5")
+sheets <- c("top10")
 for (sheet in sheets) {
   cat("\nComputing indicator 80,", sheet, "\n")
-  og.comp.ind.name <- "displacement-risk-level-20181211.xlsx" #"displacement-risk-level-20181206.csv"
+  og.comp.ind.name <- "displacement-risk-level-20181220.xlsx" #"displacement-risk-level-20181211.xlsx" #"displacement-risk-level-20181206.csv"
   og.comp.ind <- read.xlsx(file.path(data.dir, og.comp.ind.name), sheet = sheet) %>% as.data.table #, stringsAsFactors = FALSE
   setnames(og.comp.ind, c(colnames(og.comp.ind)[1], colnames(og.comp.ind)[4]), c("geoid10", "Comp.Index"))
   usim.blu <- fread(file.path(data.dir, "tract_opportunity_lookup.csv"), stringsAsFactors = FALSE)
@@ -213,7 +213,7 @@ for (sheet in sheets) {
   
   # transform data ----------------------------------------------------------
   
-  opp.levels <- c("low", "medium", "high")
+  opp.levels <- c("low", "moderate", "high") #c("low", "medium", "high")
   
   alldata <- compile.tbl("census_tract", allruns, run.dir, attributes, ind.extension)
   

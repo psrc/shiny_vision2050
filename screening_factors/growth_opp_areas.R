@@ -93,9 +93,10 @@ gq <- gq.file %>%
 # general -----------------------------------------------------------------
 
 # og.comp.ind <- "Y:/VISION 2050/Data/Opportunity Mapping Update/Finalopportunity_analysis - Opportunity_Index_06062012_Region_.csv"
-og.comp.ind <- file.path(data.dir, "Finalopportunity_analysis - Opportunity_Index_06062012_Region_.csv")
+# og.comp.ind <- file.path(data.dir, "Finalopportunity_analysis - Opportunity_Index_06062012_Region_.csv")
+# og.comp.ind <- file.path(data.dir, "Opp-ALL-SEIS-181220.csv")
 
-tract.lu <- read.csv(file.path(data.dir, "tract_opportunity_lookup.csv"), stringsAsFactors = FALSE)
+tract.lu <- read.csv(file.path(data.dir, "tract_opportunity_lookup_2018-12-20.csv"), stringsAsFactors = FALSE) #"tract_opportunity_lookup.csv"
 
 years.col <- paste0("yr", years)
 
@@ -105,7 +106,8 @@ ind.extension <- ".csv"
 
 # transform data ----------------------------------------------------------
 
-opp.levels <- c("Very Low Opportunity", "Low Opportunity", "Moderate Opportunity", "High Opportunity", "Very High Opportunity", "Moderate to Very High Opportunity Areas")
+# opp.levels <- c("Very Low Opportunity", "Low Opportunity", "Moderate Opportunity", "High Opportunity", "Very High Opportunity", "Moderate to Very High Opportunity Areas")
+opp.levels <- c("Very Low", "Low", "Moderate", "High", "Very High", "Moderate to Very High")
 
 alldata <- compile.tbl("census_tract", allruns, run.dir, attributes, ind.extension)
 df2 <- melt.data.table(alldata,
@@ -159,7 +161,8 @@ calc.by.geog <- function(geog, atable) {
   } else {
     
   }
-  d <- df[!is.na(Comp.Index), lapply(.SD, sum), .SDcols = c(sdcols), by = group.by.cols][, eval(delta.expr)]
+  # d <- df[!is.na(Comp.Index), lapply(.SD, sum), .SDcols = c(sdcols), by = group.by.cols][, eval(delta.expr)]
+  d <- df[, lapply(.SD, sum), .SDcols = c(sdcols), by = group.by.cols][, eval(delta.expr)]
   
   # calculate sums
   delta.sums <- d[, .(sum_delta = sum(delta)), by = group.by.cols2]
@@ -259,7 +262,8 @@ dt.all <- df.all[, county.sort := factor(county, levels = countyname.sort)
                  ][, indicator.sort := factor(indicator, levels = c("population", "households", "employment"))
                    ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
                      ][order(indicator.sort, county.sort, Comp.Index.sort)
-                       ][, `:=`(county.sort = NULL, indicator.sort = NULL, Comp.Index.sort = NULL)]
+                       ][, `:=`(county.sort = NULL, indicator.sort = NULL, Comp.Index.sort = NULL)
+                         ][!is.na(Comp.Index),]
 
 # loop through each run
 dlist <- NULL
