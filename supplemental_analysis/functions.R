@@ -74,3 +74,28 @@ calc.aagr <- function(start.year.col, end.year.col, start.year.num, end.year.num
   x <- parse(text = paste0( "((", end.year.col,"/",start.year.col,")^(1/(",end.year.num,"-", start.year.num,"))) - 1" ))
   # (((get(eval(years.col[2]))/get(eval(years.col[1])))^(1/(fcast.yrs[2]-fcast.yrs[1]))) - 1)
 }
+
+calc.aggr.by.cnty <- function(.f) { # a function that returns a table
+  dt <- .f #compile.rgc.calc.delta()
+  sdcols <- c(colnames(dt)[str_which(colnames(dt), "^act|^yr|^delta")])
+  bycols <- c(colnames(dt)[str_which(colnames(dt), "^county")], "indicator", "Type", "run")
+  t <- dt[, lapply(.SD, sum), .SDcols = sdcols, by = bycols][order(run, indicator)]
+  aagrnames <- paste0("aagr_", allcols1, "-", allcols2)
+  start.year.col <- allcols2
+  end.year.col <- allcols1
+  start.year.num <- str_extract(start.year.col, "\\d+") %>% lapply(as.numeric) %>% unlist
+  end.year.num <- str_extract(end.year.col, "\\d+") %>% lapply(as.numeric) %>% unlist
+  dtaa <- t[, (aagrnames) := mapply(function(a, b, c, d) ((.SD[[b]]/.SD[[a]])^(1/(d-c))-1), 
+                                    start.year.col, end.year.col, start.year.num, end.year.num, SIMPLIFY =  F)]
+}
+
+calc.aggr.by.subgeog <- function(.f) { # a function that returns a table
+  dt <- .f #compile.juris.calc.delta()
+  aagrnames <- paste0("aagr_", allcols1, "-", allcols2)
+  start.year.col <- allcols2
+  end.year.col <- allcols1
+  start.year.num <- str_extract(start.year.col, "\\d+") %>% lapply(as.numeric) %>% unlist
+  end.year.num <- str_extract(end.year.col, "\\d+") %>% lapply(as.numeric) %>% unlist
+  dtaa <- dt[, (aagrnames) := mapply(function(a, b, c, d) ((.SD[[b]]/.SD[[a]])^(1/(d-c))-1), 
+                                     start.year.col, end.year.col, start.year.num, end.year.num, SIMPLIFY =  F)]
+}
