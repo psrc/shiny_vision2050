@@ -27,29 +27,6 @@ ind.extension <- ".csv"
 
 # compile forecast files 
 file.regexp <- "city.*[population|employment]_tod_\\d\\.csv"
-# compile.tbl.supp.tod <- function(file.regexp, allruns, run.dir, ind.extension) {
-#   df <- NULL
-#   for (r in 1:length(run.dir)) { # for each run
-#     base.dir <- purrr::pluck(allruns, run.dir[r])
-#     filenames <- list.files(file.path(base.dir, "indicators"), pattern = file.regexp)
-#     for (afile in filenames) {
-#       datatable <- dt <- NULL
-#       datatable <- fread(file.path(base.dir, "indicators", afile), header = TRUE, sep = ",")
-#       colnames(datatable)[1] <- str_replace(colnames(datatable)[1], '\\w+_', 'name_')
-#       dt <- melt.data.table(datatable,
-#                             id.vars = "name_id",
-#                             measure.vars = colnames(datatable)[2: ncol(datatable)],
-#                             variable.name = "variable", value.name = "estimate")
-#       dt[, `:=` (run = run.dir[r], 
-#                  year = str_extract(variable, "\\d+$"), 
-#                  attribute = str_extract(variable, "^\\w+(?=_tod)"),
-#                  tod_id = str_extract(variable, "(?<=tod_)\\d{1}"))]
-#       df <- rbindlist(list(df, dt), use.names = TRUE, fill = TRUE)
-#     }
-#   }
-#   df[, variable := NULL]
-#   return(df)
-# }
 
 calc.delta <- function() {
   jlu <- read.xlsx(file.path(data.dir, "cities.xlsx")) %>% as.data.table

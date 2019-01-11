@@ -38,9 +38,6 @@ calc.actuals.delta <- function() {
   edt <- merge(emp, lu, by.x = "Jurisdiction", by.y = "gis_center")
   cols <- c("growth_center_id", "name", colnames(edt)[str_which(colnames(edt), "^act|^county")])
   dt <- edt[, ..cols]
-  # deltas
-  # cols1 <- c(tail(act.yrs.cols, -1), act.yrs.cols[length(act.yrs.cols)])
-  # cols2 <- c(head(act.yrs.cols, -1), act.yrs.cols[1])
   deltanames <- paste0("delta_", cols1, "-", cols2)
   dtcalc <- dt[, (deltanames) := mapply(function(x, y) (.SD[[x]]-.SD[[y]]), cols1, cols2, SIMPLIFY = F)]
 }
