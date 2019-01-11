@@ -44,7 +44,6 @@ enlist.lu <- read.xlsx(file.path(data.dir, enlist.lu.nm))
 enlist.mil.file.nm <- "enlisted_personnel_SoundCast_08202018.csv"
 gq.file.nm <- "group_quarters_geo.xlsx"
 
-
 settings <- list(aagr_rgc_bsa = list(out.file.nm = "2_aagr_rgc_bsa"),
                  aagr_mics = list(out.file.nm = "2a_aagr_mics"),
                  aagr_rgc_bsa_type_by_juris = list(out.file.nm = "5_aagr_rgc_bsa_by_type_juris")
