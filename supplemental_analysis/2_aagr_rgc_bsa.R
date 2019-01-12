@@ -13,7 +13,7 @@ if(!exists("set.globals") || !set.globals) {
   source("functions.R")
 }
 
-cat("\nComputing metric 2, Average Annual Growth Rates by Alternative: RGCs and CSAs\n")
+cat("\nComputing metric 2, Average Annual Growth Rates by Alternative: RGCs and Jurisdictions with CSAs\n")
 out.file.nm <- settings$aagr_rgc_bsa$out.file.nm 
 
 
@@ -101,6 +101,7 @@ compile.fcast.pop.tod <- function() { # by juris
 }
 
 compile.juris.calc.delta <- function() {
+  csa <- fread(file.path(data.dir, "cities_with_csas.csv"))
   act <- rbindlist(list(compile.pop.actuals.juris(), compile.emp.actuals.juris()), use.names = T)
   fcast <- rbindlist(list(compile.fcast.pop.tod(), compile.fcast.emp.tod()), use.names = T)
   jdt <- act[fcast, on = c("city_id" = "name_id", "indicator" = "attribute", "city_name", "county_name", "county_juris", "county_code")]
@@ -112,6 +113,7 @@ compile.juris.calc.delta <- function() {
   
   deltanames <- paste0("delta_", allcols1, "-", allcols2)
   dtcalc <- cdt[, (deltanames) := mapply(function(x, y) (.SD[[x]]-.SD[[y]]), allcols1, allcols2, SIMPLIFY = F)]
+  t <- dtcalc[city_name %in% csa$usim_jurisdiction,] # filter for only csa jurisdictions
 }
 
 compile.juris.calc.aagr.by.juris <- function() {
@@ -232,5 +234,26 @@ for (r in 1:length(run.dir)) {
 # export ------------------------------------------------------------------
 
 write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
+
+
+# Prep data for vizualization ---------------------------------------------
+
+viz.prep.metric.2 <- function(dt) {
+  csa <- fread(file.path(data.dir, "cities_with_csas.csv"))
+  mcols <- colnames(dt)[str_which(colnames(dt), "^act|^yr|^delta|^aagr")]
+  idcols <- setdiff(colnames(dt), mcols)
+  calccols <- colnames(dt)[str_which(colnames(dt), "^delta|^aagr")]
+  mdt <- melt.data.table(dt, id.vars = idcols, measure.vars = mcols, variable.name = "colname", value.name = "value")
+  mdt[, `:=` (time_period = str_replace_all(colname, "[[:alpha:]]+|_", "") %>% str_trim(),
+              value_type = str_extract(colname, "^[[:alpha:]]+"),
+              dataset_type = str_extract(colname, "\\w+$") %>% str_extract("[[:alpha:]]+"))]
+  mdt[, dataset_type := switch(dataset_type, "act" = "actual", "yr" = "forecast"), by = .(dataset_type)]
+  mdt[, value_type := switch(value_type, "act" = "nominal", "yr" = "nominal"), by = .(value_type)]
+  mdt$alternative[mdt$run] <- names(run.dir)
+  t <- mdt[, .(Type, indicator, county_name, name_id, name, run, alternative, colname, time_period, value_type, dataset_type, value)]
+}
+
+dtviz <- viz.prep.metric.2(dt)
+# write.csv(dtviz, file.path(out.dir, "tidy_format", paste0(out.file.nm, "_viz_", Sys.Date(), ".csv")), row.names = F)
 
 setwd(curr.dir)
