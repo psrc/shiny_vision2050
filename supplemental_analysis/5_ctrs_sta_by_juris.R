@@ -39,7 +39,7 @@ calc.delta <- function() {
 
 calc.by.juris <- function() {
   dt <- calc.delta()
-  dt[, aagr := (((get(eval(years.col[2]))/get(eval(years.col[1])))^(1/(fcast.yrs[2]-fcast.yrs[1]))) - 1)
+  dt[, aagr := eval(calc.aagr(years.col[1], years.col[2], fcast.yrs[1], fcast.yrs[2])) 
         ][is.nan(aagr), aagr := 0
           ][, county_id := as.character(county_id)]
   setnames(dt, "city_name", "jurisdiction")
@@ -52,7 +52,7 @@ calc.by.cnty <- function() {
   dt <- calc.delta()
   sdcols <- c(years.col, "delta")
   cdt <- dt[, lapply(.SD, sum), .SDcols = sdcols, by = .(run, county_id, attribute, tod_id)]
-  cdt[, aagr := (((get(eval(years.col[2]))/get(eval(years.col[1])))^(1/(fcast.yrs[2]-fcast.yrs[1]))) - 1)
+  cdt[, aagr := eval(calc.aagr(years.col[1], years.col[2], fcast.yrs[1], fcast.yrs[2]))
       ][is.nan(aagr), aagr := 0
         ][, county_id := as.character(county_id)]
   cdt[, jurisdiction := switch(county_id, "33" = "King County", "35" = "Kitsap County", "53" = "Pierce County", "61" = "Snohomish County"), by = county_id]
