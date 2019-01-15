@@ -29,12 +29,14 @@ ind.extension <- ".csv"
 file.regexp <- "city.*[population|employment]_tod_\\d\\.csv"
 
 calc.delta <- function() {
+  csa <- fread(file.path(data.dir, "cities_with_csas.csv"))
   jlu <- read.xlsx(file.path(data.dir, "cities.xlsx")) %>% as.data.table
   lu <- jlu[, .(city_id, county_id, city_name)]
   dt <- compile.tbl.supp.tod(file.regexp, allruns, run.dir, ind.extension)
   dtc <- dcast.data.table(dt, name_id + run + attribute + tod_id ~ paste0("yr", year), value.var = "estimate")   # cast year
   dtc[, delta := get(eval(years.col[2]))-get(eval(years.col[1]))]
   dtc[lu, on = c("name_id" = "city_id"), `:=` (county_id = i.county_id, city_name = i.city_name)]
+  t <- dtc[city_name %in% csa$usim_jurisdiction, ] # filter for only jurisdictions with csas
 }
 
 calc.by.juris <- function() {
