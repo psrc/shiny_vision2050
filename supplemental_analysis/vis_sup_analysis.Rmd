@@ -1,0 +1,68 @@
+---
+title: "Capacity Analysis"
+output:
+  html_document:
+    fig_width: 9
+    fig_height: 8
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Functions, include=FALSE}
+source("C:/Users/CLam/Desktop/shiny_vision2050/supplemental_analysis/vis_sup_analysis.R")
+
+plot.county.rgprop.grid <- function(scentable, linetable, county) {
+  st <- scentable[county_id == county,]
+  lt <- linetable[county_id == county,]
+  plot.cols <- length(unique(st$rgid_prop))
+
+  g <- ggplot(st) +
+    geom_col(aes(scenario, estimate, fill = scenario), width = .8) +
+    scale_fill_brewer(type = "qual", palette = "Pastel2", name = "Scenario") +
+    facet_wrap(~ interaction(rgid_prop, esttype), scales = "free", ncol = plot.cols) +
+    coord_capped_cart(bottom='both', left='both') +
+    geom_hline(data = lt, aes(yintercept = line_estimate, linetype = linetype)) +
+    scale_linetype_manual(name = "Capacity", values=c("solid", "twodash", "dotted")) +
+    scale_y_continuous(labels=scales::comma) +
+    labs(x = " ", y = " ")+
+    theme(legend.position ="top")
+}
+```
+
+
+## Proposed Regional Geographies by County {.tabset}
+
+### King
+
+
+```{r King, echo=FALSE}
+kin <- plot.county.rgprop.grid(cdt, ldt, 33)
+print(kin)
+
+```
+
+### Kitsap
+
+```{r Kitsap, echo=FALSE}
+kit <- plot.county.rgprop.grid(cdt, ldt, 35)
+print(kit)
+
+```
+
+### Pierce
+
+```{r Pierce, echo=FALSE}
+pie <- plot.county.rgprop.grid(cdt, ldt, 53)
+print(pie)
+```
+
+### Snohomish
+
+```{r Snohomish, echo=FALSE}
+sno <- plot.county.rgprop.grid(cdt, ldt, 61)
+print(sno)
+```
+
+

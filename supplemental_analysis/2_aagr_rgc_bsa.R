@@ -238,22 +238,22 @@ write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx
 
 # Prep data for vizualization ---------------------------------------------
 
-viz.prep.metric.2 <- function(dt) {
-  csa <- fread(file.path(data.dir, "cities_with_csas.csv"))
-  mcols <- colnames(dt)[str_which(colnames(dt), "^act|^yr|^delta|^aagr")]
-  idcols <- setdiff(colnames(dt), mcols)
-  calccols <- colnames(dt)[str_which(colnames(dt), "^delta|^aagr")]
-  mdt <- melt.data.table(dt, id.vars = idcols, measure.vars = mcols, variable.name = "colname", value.name = "value")
-  mdt[, `:=` (time_period = str_replace_all(colname, "[[:alpha:]]+|_", "") %>% str_trim(),
-              value_type = str_extract(colname, "^[[:alpha:]]+"),
-              dataset_type = str_extract(colname, "\\w+$") %>% str_extract("[[:alpha:]]+"))]
-  mdt[, dataset_type := switch(dataset_type, "act" = "actual", "yr" = "forecast"), by = .(dataset_type)]
-  mdt[, value_type := switch(value_type, "act" = "nominal", "yr" = "nominal"), by = .(value_type)]
-  mdt$alternative[mdt$run] <- names(run.dir)
-  t <- mdt[, .(Type, indicator, county_name, name_id, name, run, alternative, colname, time_period, value_type, dataset_type, value)]
-}
-
-dtviz <- viz.prep.metric.2(dt)
-# write.csv(dtviz, file.path(out.dir, "tidy_format", paste0(out.file.nm, "_viz_", Sys.Date(), ".csv")), row.names = F)
-
-setwd(curr.dir)
+# viz.prep.metric.2 <- function(dt) {
+#   csa <- fread(file.path(data.dir, "cities_with_csas.csv"))
+#   mcols <- colnames(dt)[str_which(colnames(dt), "^act|^yr|^delta|^aagr")]
+#   idcols <- setdiff(colnames(dt), mcols)
+#   calccols <- colnames(dt)[str_which(colnames(dt), "^delta|^aagr")]
+#   mdt <- melt.data.table(dt, id.vars = idcols, measure.vars = mcols, variable.name = "colname", value.name = "value")
+#   mdt[, `:=` (time_period = str_replace_all(colname, "[[:alpha:]]+|_", "") %>% str_trim(),
+#               value_type = str_extract(colname, "^[[:alpha:]]+"),
+#               dataset_type = str_extract(colname, "\\w+$") %>% str_extract("[[:alpha:]]+"))]
+#   mdt[, dataset_type := switch(dataset_type, "act" = "actual", "yr" = "forecast"), by = .(dataset_type)]
+#   mdt[, value_type := switch(value_type, "act" = "nominal", "yr" = "nominal"), by = .(value_type)]
+#   mdt$alternative[mdt$run] <- names(run.dir)
+#   t <- mdt[, .(Type, indicator, county_name, name_id, name, run, alternative, colname, time_period, value_type, dataset_type, value)]
+# }
+# 
+# dtviz <- viz.prep.metric.2(dt)
+# # write.csv(dtviz, file.path(out.dir, "tidy_format", paste0(out.file.nm, "_viz_", Sys.Date(), ".csv")), row.names = F)
+# 
+# setwd(curr.dir)
