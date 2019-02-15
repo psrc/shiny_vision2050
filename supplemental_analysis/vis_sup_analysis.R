@@ -50,8 +50,10 @@ create.county.rgprop.linetype.dt <- function(table) {
                           variable.name = "linetype",
                           value.name = "line_estimate")
   dtu <- unique(dt)
-  dtu <- dtu[linetype != "usim_min"]
-  dtu[, linetype := factor(linetype, levels = c("blands", "usim_max", "usim_50"), labels = c("Buildable Lands", "Urbansim Max", "Urbansim (norm)"))]
+  dtu <- dtu[linetype != "usim_min",]
+  exc <- dtu[(esttype == "Activity Units" & linetype == "usim_max"), ]
+  ajdt <- dtu[!exc, on = c("county_id", "rgid_prop", "esttype", "linetype")]
+  ajdt[, linetype := factor(linetype, levels = c("blands", "usim_max", "usim_50"), labels = c("Buildable Lands", "Urbansim Max", "Urbansim (norm)"))]
 }
 
 alldata <- transform.data(dir, fname)

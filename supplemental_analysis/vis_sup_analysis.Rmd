@@ -23,8 +23,10 @@ plot.county.rgprop.grid <- function(scentable, linetable, county) {
     scale_fill_brewer(type = "qual", palette = "Pastel2", name = "Scenario") +
     facet_wrap(~ interaction(rgid_prop, esttype), scales = "free", ncol = plot.cols) +
     coord_capped_cart(bottom='both', left='both') +
-    geom_hline(data = lt, aes(yintercept = line_estimate, linetype = linetype)) +
-    scale_linetype_manual(name = "Capacity", values=c("solid", "twodash", "dotted")) +
+    # geom_hline(data = lt, aes(yintercept = line_estimate, linetype = linetype)) +
+    # scale_linetype_manual(name = "Capacity", values= c("solid", "twodash", "dotted")) +
+    geom_hline(data = lt, aes(yintercept = line_estimate, color = linetype)) +
+    scale_color_manual(name = "Capacity", values = c("#9d0000", "#010101", "#636363")) +
     scale_y_continuous(labels=scales::comma) +
     labs(x = " ", y = " ")+
     theme(legend.position ="top")
