@@ -46,7 +46,8 @@ gq.file.nm <- "group_quarters_geo.xlsx"
 
 settings <- list(aagr_rgc_bsa = list(out.file.nm = "2_aagr_rgc_bsa"),
                  aagr_mics = list(out.file.nm = "2a_aagr_mics"),
-                 aagr_rgc_bsa_type_by_juris = list(out.file.nm = "5_aagr_rgc_bsa_by_type_juris")
+                 aagr_rgc_bsa_type_by_juris = list(out.file.nm = "5_aagr_rgc_bsa_by_type_juris"),
+                 jobs_hu_by_city = list(out.file.nm = "jobs_hu_by_city")
                  ) 
 
 source("../screening_factors/all_runs.R")
