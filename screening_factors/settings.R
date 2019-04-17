@@ -39,8 +39,8 @@ run.dir <- c("PUG-STC" = "run_10.run_2019_04_04_11_39", # PUG
              )
 
 # out.dir <- "X:/DSA/Vision2050/land_use_tables"
-# out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Model_Output"
-out.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/scripts_results"
+out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Model_Output"
+# out.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/scripts_results"
           
 data.dir <- "J:/Projects/V2050/SEIS/Data_Support/script_input"
 years <- c(2050)

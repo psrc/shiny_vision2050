@@ -11,7 +11,6 @@ if(!exists("set.globals") || !set.globals) {
   setwd(this.dir)
   source("settings.R")
   source("functions.R")
-  source("transform_actual_pop_emp.R")
 }
 
 cat("\nComputing indicator 30, jobs-pop in tod areas\n")
