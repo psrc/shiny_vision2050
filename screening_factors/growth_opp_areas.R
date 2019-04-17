@@ -263,7 +263,7 @@ dt.all <- df.all[, county.sort := factor(county, levels = countyname.sort)
                    ][, Comp.Index.sort := factor(Comp.Index, levels = opp.levels)
                      ][order(indicator.sort, county.sort, Comp.Index.sort)
                        ][, `:=`(county.sort = NULL, indicator.sort = NULL, Comp.Index.sort = NULL)
-                         ][!is.na(Comp.Index),]
+                         ][!is.na(Comp.Index),] # output will contain NAs, remove from report
 
 # loop through each run
 dlist <- NULL

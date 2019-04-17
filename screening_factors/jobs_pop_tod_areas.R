@@ -11,6 +11,7 @@ if(!exists("set.globals") || !set.globals) {
   setwd(this.dir)
   source("settings.R")
   source("functions.R")
+  source("transform_actual_pop_emp.R")
 }
 
 cat("\nComputing indicator 30, jobs-pop in tod areas\n")
@@ -67,6 +68,22 @@ compile.tod.baseyear.actuals <- function(popfilename, empfilename) {
   df[County == "Region Total", County := "Region"]
 } 
 
+compile.hct.baseyear.actuals <- function() {
+  dtlist <- NULL
+  attrs <- c("pop", "emp") 
+  for (i in 1:length(attrs)) {
+    t <- prep.actuals.hct.by.juris("county", attrs[i])
+    tcnty <- t[year == 2017 & code != 0, lapply(.SD, sum), .SDcols = "estimate", by = .(County, indicator = attribute)
+      ][, County := switch(County, "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = "County"] 
+    tsum <- tcnty[, lapply(.SD, sum), .SDcols = "estimate", by = .(indicator)][, County := "Region"] 
+    tt <- rbindlist(list(tcnty, tsum), use.names = T)
+    dtlist[[attrs[i]]] <- tt
+  }
+  
+  dt <- rbindlist(dtlist, use.names = T)
+  dt[, indicator := switch(indicator, "pop" = "population", "emp" = "employment"), by = "indicator"]
+}
+
 query.military <- function(milfilename, geos, yrs) {
   mil <- fread(file.path(data.dir, milfilename))
   mil <- mil[!is.na(ParcelID)]
@@ -87,9 +104,13 @@ mil.df <- query.military(enlist.mil.file.nm, c("tod_id"), c("2017", "2050"))
 
 # actuals
 ct <- compile.control.totals("2017_actuals_2050_controls.xlsx")
-todbya <- compile.tod.baseyear.actuals("tod_est2017.xlsx", "tod_employment_2017_23.xlsx")
+
+# todbya <- compile.tod.baseyear.actuals("tod_est2017.xlsx", "tod_employment_2017_23.xlsx") # original
+todbya <- compile.hct.baseyear.actuals() # new hct (as the crow flies)
+
 ct[todbya, on = c("Countyname" = "County", "indicator"), ("byr_tod_actual") := i.estimate]
-ct <- ct[scenario %in% names(run.dir), ][, (paste0("byr_share_in_tod_actual")) := byr_tod_actual/get(paste0("ct_", byr))]
+# ct <- ct[scenario %in% names(run.dir), ][, (paste0("byr_share_in_tod_actual")) := byr_tod_actual/get(paste0("ct_", byr))] # original
+ct <- ct[indicator != "AU" & scenario %in% names(run.dir), ][, (paste0("byr_share_in_tod_actual")) := byr_tod_actual/get(paste0("ct_", byr))]
 ct$run <- run.dir[ct$scenario]
 ctdt <- ct[Countyname == "Region", ]
 
@@ -337,7 +358,7 @@ create.tod.equity.table <- function() {
 }
 
 
-# Regional Totals ---------------------------------------------------------
+# Regional Totals (base) ---------------------------------------------------------
 
 mil.df2 <- mil.df[, .(enlist_estimate = sum(enlist_estimate)), by = year]
 gq2 <- gq[, .(gq = sum(gq)), by = year]

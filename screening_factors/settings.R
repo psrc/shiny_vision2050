@@ -23,10 +23,11 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
 #              Modelsrv3 = "//modelsrv3/e$/opusgit/urbansim_data/data/psrc_parcel/runs"
 # )
 
-run.dir <- c(#"STC" = "run_3.run_2018_08_17_13_06"#,
-             "STC" = "run_6.run_2018_10_23_11_15",
-             "RUG" = "run_5.run_2018_10_25_09_07",
-             "TOD" = "run_8.run_2018_10_29_15_01"
+run.dir <- c("PUG-STC" = "run_10.run_2019_04_04_11_39", # PUG
+             "PUG-RUG" = "run_6.run_2019_04_04_11_41" # PUG
+             # "STC" = "run_6.run_2018_10_23_11_15"#, #summer 2018/DEIS
+             # "RUG" = "run_5.run_2018_10_25_09_07",#summer 2018/DEIS
+             # "TOD" = "run_8.run_2018_10_29_15_01"#summer 2018/DEIS
              # "DUG" = "run_4.run_2018_10_02_11_57",
              # "DUG-JH" = "run_1.run_2018_10_01_20_37",
              # "H2O2" = "run_6.run_2018_10_02_12_01",
@@ -38,8 +39,8 @@ run.dir <- c(#"STC" = "run_3.run_2018_08_17_13_06"#,
              )
 
 # out.dir <- "X:/DSA/Vision2050/land_use_tables"
-out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Model_Output"
-# out.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/scripts_results"
+# out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Model_Output"
+out.dir <- "C:/Users/CLam/Desktop/shiny_vision2050/scripts_results"
           
 data.dir <- "J:/Projects/V2050/SEIS/Data_Support/script_input"
 years <- c(2050)
