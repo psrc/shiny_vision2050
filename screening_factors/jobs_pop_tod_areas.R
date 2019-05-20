@@ -104,8 +104,12 @@ mil.df <- query.military(enlist.mil.file.nm, c("tod_id"), c("2017", "2050"))
 # actuals
 ct <- compile.control.totals("2017_actuals_2050_controls.xlsx")
 
-# todbya <- compile.tod.baseyear.actuals("tod_est2017.xlsx", "tod_employment_2017_23.xlsx") # original
-todbya <- compile.hct.baseyear.actuals() # new hct (as the crow flies)
+
+# Network Buffer vs As-Crow-Flies actual estimates ------------------------
+
+
+todbya <- compile.tod.baseyear.actuals("tod_est2017.xlsx", "tod_employment_2017_23.xlsx") # original network buffer (TOD 1-6)
+# todbya <- compile.hct.baseyear.actuals() # as the crow flies buffer (HCT 1-9)
 
 ct[todbya, on = c("Countyname" = "County", "indicator"), ("byr_tod_actual") := i.estimate]
 # ct <- ct[scenario %in% names(run.dir), ][, (paste0("byr_share_in_tod_actual")) := byr_tod_actual/get(paste0("ct_", byr))] # original
