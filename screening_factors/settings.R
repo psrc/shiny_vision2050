@@ -23,8 +23,11 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
 #              Modelsrv3 = "//modelsrv3/e$/opusgit/urbansim_data/data/psrc_parcel/runs"
 # )
 
-run.dir <- c("Zartan" = "run_11.run_2019_05_09_12_51",
-             "DrMindbender" = "run_13.run_2019_05_09_12_57"#,
+run.dir <- c("CobraCommander" = "run_17.run_2019_05_31_20_22",
+             "GungHo" = "run_12.run_2019_05_17_14_22",
+             "QuickKick" = "run_1.run_2019_05_18_07_28"#,
+             #"Zartan" = "run_11.run_2019_05_09_12_51",
+             #"DrMindbender" = "run_13.run_2019_05_09_12_57"#,
              # "PUG-TFG-DueDil" = "run_11.run_2019_05_06_14_39"#, 
              # "PPA-7575" = "run_12.run_2019_05_03_15_05",
              # "PPA-6575" = "run_9.run_2019_05_03_15_05"
