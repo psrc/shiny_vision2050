@@ -1,12 +1,21 @@
+rund <- list("L:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs", "N:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs")
+# rund <- "L:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs"
 
-rund <- "L:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs"
-base <- list(Aws01 = file.path(rund, "awsmodel01"),
-             Aws03 = file.path(rund, "awsmodel03"),
-             Aws04 = file.path(rund, "awsmodel04"),
-             Aws05 = file.path(rund, "awsmodel05"),
-             Aws06 = file.path(rund, "awsmodel06"),
-             Aws07 = file.path(rund, "awsmodel07"),
-             Aws08 = file.path(rund, "awsmodel08"))
+base <- c()
+for (r in 1:length(rund)) {
+  aws <- paste0("awsmodel0", c(1, 3:8))
+  for (a in 1:length(aws)) {
+    base <- append(base, file.path(rund[[r]], aws[[a]]), length(base))
+  }
+}
+
+# base <- list(Aws01 = file.path(rund, "awsmodel01"),
+#              Aws03 = file.path(rund, "awsmodel03"),
+#              Aws04 = file.path(rund, "awsmodel04"),
+#              Aws05 = file.path(rund, "awsmodel05"),
+#              Aws06 = file.path(rund, "awsmodel06"),
+#              Aws07 = file.path(rund, "awsmodel07"),
+#              Aws08 = file.path(rund, "awsmodel08"))
              
 # base <- list(Aws01 = "//aws-model01/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
 #              Aws02 = "//aws-model02/e$/opusgit/urbansim_data/data/psrc_parcel/runs",
@@ -23,9 +32,11 @@ base <- list(Aws01 = file.path(rund, "awsmodel01"),
 #              Modelsrv3 = "//modelsrv3/e$/opusgit/urbansim_data/data/psrc_parcel/runs"
 # )
 
-run.dir <- c("CobraCommander" = "run_17.run_2019_05_31_20_22",
-             "GungHo" = "run_12.run_2019_05_17_14_22",
-             "QuickKick" = "run_1.run_2019_05_18_07_28"#,
+run.dir <- c("Serpentor" = "run_18.run_2019_06_06_19_53", # N drive
+             "Destro" = "run_16.run_2019_06_06_20_01"#, # N drive
+             # "CobraCommander" = "run_17.run_2019_05_31_20_22"#, # L drive
+             # "GungHo" = "run_12.run_2019_05_17_14_22",
+             # "QuickKick" = "run_1.run_2019_05_18_07_28"#,
              #"Zartan" = "run_11.run_2019_05_09_12_51",
              #"DrMindbender" = "run_13.run_2019_05_09_12_57"#,
              # "PUG-TFG-DueDil" = "run_11.run_2019_05_06_14_39"#, 
