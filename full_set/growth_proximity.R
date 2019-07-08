@@ -45,7 +45,7 @@ include.equity <- list(transit_buffer = settings$gpro$include.equity[1],
                        growth_amenities = settings$gamn$include.equity)
 
 ind.types <- names(all_attrs)
-ind.types <- "park_buffer"
+# ind.types <- "park_buffer"
 
 geo <- "county"
 geo.id <- paste0(geo, "_id")

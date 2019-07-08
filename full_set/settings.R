@@ -1,22 +1,39 @@
 library(openxlsx)
 library(magrittr)
 library(dplyr)
+library(data.table)
 
 # base indicator directory (L drive)
-rund <- "/Volumes/Model\ Data/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs"
+# rund <- "/Volumes/Model\ Data/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs"
 # rund <- "L:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs"
-base <- list(Aws01 = file.path(rund, "awsmodel01"),
-             Aws03 = file.path(rund, "awsmodel03"),
-             Aws04 = file.path(rund, "awsmodel04"),
-             Aws05 = file.path(rund, "awsmodel05"),
-             Aws06 = file.path(rund, "awsmodel06"),
-             Aws07 = file.path(rund, "awsmodel07"),
-             Aws08 = file.path(rund, "awsmodel08")
-            )
+# rund <- "N:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs"
+# base <- list(Aws01 = file.path(rund, "awsmodel01"),
+#              Aws03 = file.path(rund, "awsmodel03"),
+#              Aws04 = file.path(rund, "awsmodel04"),
+#              Aws05 = file.path(rund, "awsmodel05"),
+#              Aws06 = file.path(rund, "awsmodel06"),
+#              Aws07 = file.path(rund, "awsmodel07"),
+#              Aws08 = file.path(rund, "awsmodel08")
+#             )
 script.dir <- "/Users/hana/R/vision2050indicators/full_set"
-run.dir <- c("STC" = "run_6.run_2018_10_23_11_15",
-             "RUG" = "run_5.run_2018_10_25_09_07",
-             "TOD" = "run_8.run_2018_10_29_15_01"#,
+
+# base indicator directories (L and N drives)
+rund <- list("L:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs", 
+             "N:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs")
+base <- c()
+for (r in 1:length(rund)) {
+  aws <- paste0("awsmodel0", c(1, 3:8))
+  for (a in 1:length(aws)) {
+    base <- append(base, file.path(rund[[r]], aws[[a]]), length(base))
+  }
+}
+
+run.dir <- c("SgtSlaughter" = "run_7.run_2019_07_04_11_37", # N drive
+             "NemesisEnforcer" = "run_4.run_2019_06_29_07_47", # N drive
+             "LiftTicket" = "run_3.run_2019_06_13_14_36"#,
+             #"STC" = "run_6.run_2018_10_23_11_15",
+             #"RUG" = "run_5.run_2018_10_25_09_07",
+             #"TOD" = "run_8.run_2018_10_29_15_01"#,
              # "DUG" = "run_4.run_2018_10_02_11_57", 
              # "H2O2" = "run_6.run_2018_10_02_12_01",
              # "TOD" = "run_3.run_2018_10_02_14_30",
@@ -30,15 +47,16 @@ run.dir <- c("STC" = "run_6.run_2018_10_23_11_15",
 indicator.dirnm <- "indicators"
 
 # base directory used for various inputs and outputs
-bdir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support"
+# bdir <- "/Volumes/DataTeam/Projects/V2050/SEIS/Data_Support"
 #bdir <- "~/DataTeam/Projects/V2050/SEIS/Data_Support"
-# bdir <- "J:/Projects/V2050/SEIS/Data_Support"
+bdir <- "J:/Projects/V2050/SEIS/Data_Support"
 
 data.dir <- file.path(bdir, "script_input")
- out.dir <- file.path(bdir, "Model_Output/Working")
-#out.dir <- file.path(bdir, "Model_Output") # for final outputs
+ # out.dir <- file.path(bdir, "Model_Output/Working")
+ out.dir <- "J:/Projects/V2050/PUGS-PA/Model_Output"
+# out.dir <- file.path(bdir, "Model_Output") # for final outputs
 out.dir.maps <- file.path(out.dir, "Maps")
-out.dir.maps <- file.path(bdir, "Model_Output", "Maps")
+# out.dir.maps <- file.path(bdir, "Model_Output", "Maps")
 
 years <- c(2050)
 byr <- 2017

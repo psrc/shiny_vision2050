@@ -32,7 +32,9 @@ for (r in 1:length(rund)) {
 #              Modelsrv3 = "//modelsrv3/e$/opusgit/urbansim_data/data/psrc_parcel/runs"
 # )
 
-run.dir <- c("Serpentor" = "run_18.run_2019_06_06_19_53"#, # N drive
+run.dir <- c("SgtSlaughter" = "run_7.run_2019_07_04_11_37"
+             # "NemesisEnforcer" = "run_4.run_2019_06_29_07_47" # N drive
+             #"Serpentor" = "run_18.run_2019_06_06_19_53"#, # N drive
              # "Destro" = "run_16.run_2019_06_06_20_01"#, # N drive
              # "CobraCommander" = "run_17.run_2019_05_31_20_22"#, # L drive
              # "GungHo" = "run_12.run_2019_05_17_14_22",
