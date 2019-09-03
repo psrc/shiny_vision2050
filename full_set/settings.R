@@ -20,6 +20,8 @@ script.dir <- "/Users/hana/R/vision2050indicators/full_set"
 # base indicator directories (L and N drives)
 rund <- list("L:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs", 
              "N:/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs")
+#rund <- list(#"/Volumes/Model\ Data/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs", 
+#             "/Volumes/Model\ Data\ 2/vision2050/opusgit/urbansim_data/data/psrc_parcel/runs")
 base <- c()
 for (r in 1:length(rund)) {
   aws <- paste0("awsmodel0", c(1, 3:8))
@@ -28,9 +30,12 @@ for (r in 1:length(rund)) {
   }
 }
 
-run.dir <- c("SgtSlaughter" = "run_7.run_2019_07_04_11_37", # N drive
-             "NemesisEnforcer" = "run_4.run_2019_06_29_07_47", # N drive
-             "LiftTicket" = "run_3.run_2019_06_13_14_36"#,
+run.dir <- c("Tripwire" = "run_14.run_2019_08_25_15_03",
+              "Firefly" = "run_8.run_2019_08_23_14_49",
+             "Copperhead" = "run_13.run_2019_08_22_19_09"
+             #"SgtSlaughter" = "run_7.run_2019_07_04_11_37", # N drive
+             #"NemesisEnforcer" = "run_4.run_2019_06_29_07_47", # N drive
+             #"LiftTicket" = "run_3.run_2019_06_13_14_36"#,
              #"STC" = "run_6.run_2018_10_23_11_15",
              #"RUG" = "run_5.run_2018_10_25_09_07",
              #"TOD" = "run_8.run_2018_10_29_15_01"#,
@@ -52,8 +57,9 @@ indicator.dirnm <- "indicators"
 bdir <- "J:/Projects/V2050/SEIS/Data_Support"
 
 data.dir <- file.path(bdir, "script_input")
- # out.dir <- file.path(bdir, "Model_Output/Working")
- out.dir <- "J:/Projects/V2050/PUGS-PA/Model_Output"
+# out.dir <- file.path(bdir, "Model_Output/Working")
+out.dir <- "J:/Projects/V2050/PUGS-PA/Model_Output"
+# out.dir <- "/Volumes/DataTeam/Projects/V2050/PUGS-PA/Model_Output"
 # out.dir <- file.path(bdir, "Model_Output") # for final outputs
 out.dir.maps <- file.path(out.dir, "Maps")
 # out.dir.maps <- file.path(bdir, "Model_Output", "Maps")
@@ -120,7 +126,8 @@ settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
 		                                            total = list( quo(`==`(!!sym("inside_ugb"), 1))))
 		                      ),
 		            gamn = list(out.file.nm = "31_growth_amentities", include.equity = TRUE),
-		            sewr = list(out.file.nm = "58_sewer_proximity")
+		            sewr = list(out.file.nm = "58_sewer_proximity"),
+		            ard = list(out.file.nm = "80_areas_risk_displacement")
             )
 
 # assigns directories to runs
