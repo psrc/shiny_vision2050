@@ -28,6 +28,7 @@ if(run.screening.factors) {
 #source("allocation_pop_emp_au.R") # 16; gridcell indicator (does not need to be run every time)
 #source("pop_emp_density.R") # 22 & 29; gridcell indicators (do not need to be run every time)
 source("growth_proximity.R") # 28a & 28b, 31, 64
+source("redev_infill.R") # 32
 
 # cleanup
 rm(set.globals)

@@ -30,15 +30,16 @@ for (r in 1:length(rund)) {
   }
 }
 
-run.dir <- c("Tripwire" = "run_14.run_2019_08_25_15_03",
-              "Firefly" = "run_8.run_2019_08_23_14_49",
-             "Copperhead" = "run_13.run_2019_08_22_19_09"
-             #"SgtSlaughter" = "run_7.run_2019_07_04_11_37", # N drive
+run.dir <- c("Tomax" = "run_10.run_2019_09_13_13_47"
+             #"Tripwire" = "run_14.run_2019_08_25_15_03",
+             #"Firefly" = "run_8.run_2019_08_23_14_49",
+             #"Copperhead" = "run_13.run_2019_08_22_19_09"
+             #"SgtSlaughter" = "run_7.run_2019_07_04_11_37"#, # N drive
              #"NemesisEnforcer" = "run_4.run_2019_06_29_07_47", # N drive
              #"LiftTicket" = "run_3.run_2019_06_13_14_36"#,
-             #"STC" = "run_6.run_2018_10_23_11_15",
-             #"RUG" = "run_5.run_2018_10_25_09_07",
-             #"TOD" = "run_8.run_2018_10_29_15_01"#,
+             # "STC" = "KEEP DSEIS STC run_6.run_2018_10_23_11_15"#,
+             #"RUG" = "KEEP DSEIS RUG run_5.run_2018_10_25_09_07",
+             #"TFG" = "KEEP DSEIS TFG run_8.run_2018_10_29_15_01"#,
              # "DUG" = "run_4.run_2018_10_02_11_57", 
              # "H2O2" = "run_6.run_2018_10_02_12_01",
              # "TOD" = "run_3.run_2018_10_02_14_30",
@@ -126,6 +127,7 @@ settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
 		                                            total = list( quo(`==`(!!sym("inside_ugb"), 1))))
 		                      ),
 		            gamn = list(out.file.nm = "31_growth_amentities", include.equity = TRUE),
+		            redevinf = list(out.file.nm = "32_redevelopment_infill"),
 		            sewr = list(out.file.nm = "58_sewer_proximity"),
 		            ard = list(out.file.nm = "80_areas_risk_displacement")
             )
