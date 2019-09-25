@@ -30,7 +30,9 @@ for (r in 1:length(rund)) {
   }
 }
 
-run.dir <- c("Tomax" = "run_10.run_2019_09_13_13_47"
+run.dir <- c("StormShadow" = "run_11.run_2019_09_20_15_31",
+             "Flint" = "run_18.run_2019_09_20_15_49"
+             #"Tomax" = "run_10.run_2019_09_13_13_47"
              #"Tripwire" = "run_14.run_2019_08_25_15_03",
              #"Firefly" = "run_8.run_2019_08_23_14_49",
              #"Copperhead" = "run_13.run_2019_08_22_19_09"
@@ -60,6 +62,7 @@ bdir <- "J:/Projects/V2050/SEIS/Data_Support"
 data.dir <- file.path(bdir, "script_input")
 # out.dir <- file.path(bdir, "Model_Output/Working")
 out.dir <- "J:/Projects/V2050/PUGS-PA/Model_Output"
+# out.dir <- "C:/Users/clam/Desktop/shiny_vision2050/scripts_results" # Test
 # out.dir <- "/Volumes/DataTeam/Projects/V2050/PUGS-PA/Model_Output"
 # out.dir <- file.path(bdir, "Model_Output") # for final outputs
 out.dir.maps <- file.path(out.dir, "Maps")
@@ -128,6 +131,7 @@ settings <- list(goa = list(out.file.nm = "79_dist_growth_opp_areas"),
 		                      ),
 		            gamn = list(out.file.nm = "31_growth_amentities", include.equity = TRUE),
 		            redevinf = list(out.file.nm = "32_redevelopment_infill"),
+		            impersurf = list(out.file.nm = "55_impervious_surface"),
 		            sewr = list(out.file.nm = "58_sewer_proximity"),
 		            ard = list(out.file.nm = "80_areas_risk_displacement")
             )

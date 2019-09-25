@@ -12,7 +12,6 @@ if(!exists("set.globals") || !set.globals) {
 cat("\nComputing indicator 32, growth through redevelopment and infill\n")
 
 out.file.nm <- settings$redevinf$out.file.nm
-ind.extension <- ".tab"
 
 str.redev.infill <- "Acreage_by_built_res_density__.*\\.tab"
 #str.redev.infill <- "Acreage by development category__.*\\.tab"
@@ -24,11 +23,11 @@ compile.dev.land.tbl <- function(allruns, run.dir, pattern) {
   df <- NULL
   for (r in 1:length(run.dir)) { # for each run
     base.dir <- purrr::pluck(allruns, run.dir[r])
-    files <- list.files(file.path(base.dir[r], "indicators"), pattern = pattern)
+    files <- list.files(file.path(base.dir, "indicators"), pattern = pattern)
     for (f in 1:length(files)) {
       datatable <- dtm <- NULL
       filename <- files[f]
-      datatable <- fread(file.path(base.dir, "indicators", filename), header = TRUE) # TEST
+      datatable <- fread(file.path(base.dir, "indicators", filename), header = TRUE)
       colnames(datatable)[1] <- "id"
       melt.cols <- colnames(datatable)[!(colnames(datatable) %in% "id")]
       dtm <- melt.data.table(datatable, id.vars = "id", measure.vars = melt.cols, variable.name = "attribute", value.name = "estimate")
@@ -54,7 +53,7 @@ create.redev.infill.tbl <- function(table) {
   dtj[id %in% c(1) & table %in% c('minority', 'poverty'), geography := str_to_title(paste0('non-', table))]
   dtj[id %in% c(2) & table %in% c('minority', 'poverty'), geography := str_to_title(table)]
   dtj[, `:=` (id = NULL, table = NULL)]
-  dtj[, strtype := switch(strtype, 'Low'= 'Res or Mixed Use Low', 'Medium' = 'Res or Mixed Use Moderate','High' = 'Res or Mixed Use High', 'Nonres' = 'Non-Residential'), by = strtype]# fix strtype
+  dtj[, strtype := switch(strtype, 'Low'= 'Res or Mixed Use Low', 'Medium' = 'Res or Mixed Use Moderate','High' = 'Res or Mixed Use High', 'Nonres' = 'Non-Residential'), by = strtype]
   
   old.cols <- str_subset(colnames(dtj), "_")
   new.cols <- paste0(str_extract(old.cols, "(?<=_)[[:alpha:]]+"), "_", str_extract(old.cols, "^\\w+(?=_)"))
