@@ -44,10 +44,11 @@ compile.dev.land.tbl <- function(allruns, run.dir, pattern) {
 
 create.redev.infill.tbl <- function(table) {
   dtc <- dcast.data.table(table, run + id + table + strtype + devtype ~ paste0("yr", year), value.var = "estimate", subset = .(year %in% fs.years.to.keep.int))
-  dtc.exist <- dtc[devtype == 'existing', lapply(.SD, sum), .SDcols = fs.years.to.keep, by = c("run", "id", "table", "strtype")]
+  dtc.exist <- read.xlsx(file.path(data.dir, "32_redev_infill_baseyear_values.xlsx"))
   dtc.else <- dtc[devtype %in% c('redev', 'newdev'),][, delta := get(fs.years.to.keep[2]) - get(fs.years.to.keep[1])] 
   dtc.else.cast <- dcast.data.table(dtc.else, run + id + table + strtype ~ devtype, value.var = c(fs.years.to.keep[1], fs.years.to.keep[2], "delta"))
-  dtj <- merge(dtc.exist, dtc.else.cast, by = c("run", "id", "table", "strtype"))
+  dtj <- merge(dtc.exist, dtc.else.cast, by = c("id", "table", "strtype"))
+  setDT(dtj)
   dtj[id %in% c(33, 35, 53, 61) & table == 'county', geography := switch(as.character(id), '33' = 'King', '35' = 'Kitsap', '53' = 'Pierce', '61' = 'Snohomish'), by = id]
   dtj[id %in% c(1) & table == 'alldata', geography := 'Region']
   dtj[id %in% c(1) & table %in% c('minority', 'poverty'), geography := str_to_title(paste0('non-', table))]
@@ -73,8 +74,10 @@ dlist <- NULL
 for (r in 1:length(run.dir)) {
   t <- NULL
   t <- dt.all[run == run.dir[r], ][, scenario := names(run.dir[r])]
-  setcolorder(t, c('geography', 'strtype', 'run', 'scenario', fs.years.to.keep, str_subset(colnames(t), "newdev"), str_subset(colnames(t), "redev")))
-  setnames(t, str_subset(colnames(t), "yr|delta"), paste0("acres_",str_subset(colnames(t), "yr|delta")))
+  keep.cols <- c('geography', 'strtype', 'run', 'scenario', str_subset(colnames(t), "baseyear"), str_subset(colnames(t), "delta"))
+  t <- t[, ..keep.cols]
+  setnames(t, str_subset(colnames(t), "baseyear"), paste0(str_subset(colnames(t), "baseyear"), "_", fs.years.to.keep[1]))
+  setnames(t,str_subset(colnames(t), "delta"), str_replace(str_subset(colnames(t), "delta"), "delta", paste0(fs.years.to.keep[1], "-", fs.years.to.keep[2])))
   dlist[[names(run.dir[r])]] <- t
 }
 

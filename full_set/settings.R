@@ -31,8 +31,9 @@ for (r in 1:length(rund)) {
 }
 
 run.dir <- c("StormShadow" = "run_11.run_2019_09_20_15_31",
-             "Flint" = "run_18.run_2019_09_20_15_49"
-             #"Tomax" = "run_10.run_2019_09_13_13_47"
+             "Flint" = "run_18.run_2019_09_20_15_49",
+             "QuickKick" = "run_1.run_2019_05_18_07_28",
+             "Tomax" = "run_10.run_2019_09_13_13_47"
              #"Tripwire" = "run_14.run_2019_08_25_15_03",
              #"Firefly" = "run_8.run_2019_08_23_14_49",
              #"Copperhead" = "run_13.run_2019_08_22_19_09"
