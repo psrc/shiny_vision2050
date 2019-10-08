@@ -86,6 +86,6 @@ for (r in 1:length(run.dir)) {
 
 write.xlsx(dlist, file.path(out.dir, paste0(out.file.nm, "_", Sys.Date(), ".xlsx")))
 
-setwd(curr.dir)
+cat("\n")
 
 
