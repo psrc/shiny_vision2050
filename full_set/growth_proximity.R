@@ -4,7 +4,7 @@
 library(data.table)
 
 if(!exists("set.globals") || !set.globals) {
-  script.dir <- "/Users/hana/R/vision2050indicators/full_set" 
+  script.dir <- "/Users/hana/R/vision2050indicators/full_set"
   setwd(script.dir)
   source("settings.R")
   source("functions.R")
@@ -225,10 +225,44 @@ for(itype in ind.types) {
                                               lapply(.SD, sum), 
                                              .SDcols = which(sapply(t, is.numeric))]))
     # include 2017 actual if needed
-    if(include.actuals) 
+    if(include.actuals) {
       t <- merge(t, do.call(paste("get.byr.actuals", itype, geo, sep = "."), list()), by = "name_id", sort = FALSE, 
                  all.x = TRUE)
+      t[name_id %in% c("minority", "non-minority", "poverty", "non-poverty"), (paste0("population_",fs.byr,"_actual")) := get(paste0("population_", fs.byr))
+        ][, (paste0("population_",fs.byr,"_total_actual")) := get(paste0("population_", fs.byr, "_total"))]
+    } else {
+      # create control totals (similar to #30 jobs_pop_tod_areas.R)
+      #ct_2017, use the 2017 census tract actual estimates of pop (SAEP) and jobs (tract file)
+      #ct_2017-2050 use the modeled delta, i.e. the same value that gets reported in the 'delta_base' aka 'delta_total' field
+      #ct_2050, add ct_2017 and ct_2017-2050
+      
+      ct <- compile.control.totals("2017_actuals_2050_controls.xlsx")
+      ct <- ct[indicator != "AU" & scenario %in% names(run.dir[r]), ]
+      setnames(ct, 'Countyname', 'name_id')
+      ct$run <- run.dir[ct$scenario]
+      ct[, `:=` (County = NULL, scenario = NULL)]
+      
+      cteq <- compile.control.totals.equity() # baseyear only
+      setnames(cteq, "equity", "name_id")
+      ctdel <- resdf[name_id %in%  c("minority", "non-minority", "poverty", "non-poverty") &
+                       year == fs.years & 
+                       run == run.dir[r] &
+                       indicator != 'activity_units', .(name_id, indicator, run, delta_total)]
+      
+      ctdel[cteq, on = c('name_id', 'indicator'), ct_byr := ct_byr][, (paste0('ct_', fs.years)) := ct_byr + delta_total]
+      setnames(ctdel, c('ct_byr', 'delta_total'), c(paste0('ct_', fs.byr), paste0('ct_', fs.byr, '-', fs.years)))
+      ct.tot <- rbindlist(list(ct, ctdel), use.names = T , fill = T)
+      ct.tot <- dcast.data.table(ct.tot, name_id + run ~ indicator, value.var = str_subset(colnames(ct.tot), "^ct_"))
 
+      if (itype == "growth_amenities") {
+        ct.sort.cols <- c('name_id', str_subset(colnames(ct.tot), "pop.*$"))
+      } else {
+        ct.sort.cols <- c('name_id', str_subset(colnames(ct.tot), "pop.*$"), str_subset(colnames(ct.tot), "emp.*$"))
+      }
+      ct.tot <- ct.tot[ , ..ct.sort.cols] 
+      t <- ct.tot[t, on = 'name_id']
+    }
+      
     # compute shares
     expr1 <- parse(text = paste0(share.col.byr, " := ", numer.col.byr, "/", denomin.col.byr))
     expr2 <- parse(text = paste0(share.col.delta, " := ", numer.col.delta, "/", denomin.col.delta))

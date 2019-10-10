@@ -81,3 +81,46 @@ prep.actuals.hct.by.juris <- function(sumby = c("county", "region"), attribute =
   } 
 } 
 
+compile.control.totals <- function(workbook) {
+  wb <- loadWorkbook(file.path(data.dir, workbook))
+  scenarios <- names(wb)
+  dt <- NULL
+  for (ascenario in scenarios) {
+    t <- NULL
+    t <- read.xlsx(wb, sheet = ascenario) %>% as.data.table
+    t[, scenario := ascenario]
+    ifelse(is.null(dt), dt <- t, dt <- rbind(dt, t))
+  }
+  dtm <- melt.data.table(dt, id.vars = c("County", "scenario"), measure.vars = colnames(dt)[grep("17|50", colnames(dt))], value.name = "estimate")
+  dtm[, `:=` (geog = "ct", indicator = str_extract(variable, "[[:alpha:]]+"), year = str_extract(variable, "(\\d+-)?\\d+$"))
+      ][, indicator := switch(indicator, "Pop" = "population", "Emp" = "employment"), by = indicator
+        ][, year := switch(year, "17" = "2017", "50" = "2050", "17-50" = "2017-2050"), by = year]
+  df <- dtm[, Countychr := as.character(County)]
+  df[, Countyname := switch(Countychr, "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish", "99" = "Region"), by = Countychr]
+  df[, `:=` (variable = NULL, Countychr = NULL)]
+  d <- dcast.data.table(df, Countyname + County + scenario + indicator ~ geog + year, value.var = "estimate")
+}
+
+compile.control.totals.equity <- function() {
+  # create ct_byr
+  pop <- "tract_population_households.csv"
+  emp <- "Tract2017_AllJobs.xlsx"
+  
+  p <- fread(file.path(data.dir, pop))
+  p2 <- p[, GEOID10 := as.character(GEOID10)][, .(GEOID10, population = POP2017)] # contains gq
+  
+  e <- read.xlsx(file.path(data.dir, emp), startRow = 2) %>% as.data.table
+  e2 <- e[, `:=` (GEOID10 = as.character(GEOID10), employment = Employment + Uniformed.Military)][, .(GEOID10, employment)] # contains mil
+  p2[e2, on = "GEOID10", employment := i.employment][is.na(employment), employment := 0]
+  
+  eqlu <- read.equity.lu() %>% as.data.table # join with min/pov lookup
+  dt <- p2[eqlu, on = "GEOID10"][, .(GEOID10, population, employment, minority, poverty)]
+  d <- melt.data.table(dt, 
+                       id.vars = c("GEOID10", "population", "employment"), 
+                       measure.vars = c("minority", "poverty"), variable.name = "generic_equity", value.name = "equity")
+  d2 <- melt.data.table(d, 
+                        id.vars = c("GEOID10", "equity"), 
+                        measure.vars = c("population", "employment"), variable.name = "indicator", value.name = "ct_byr")
+  d3 <- d2[, lapply(.SD, sum), .SDcols = c("ct_byr"), by = .(equity, indicator)]
+}
+

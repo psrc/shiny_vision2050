@@ -31,7 +31,9 @@ for (r in 1:length(rund)) {
 }
 
 run.dir <- c("Breaker" = "run_12.run_2019_10_04_12_54",
-             "Clutch" = "run_19.run_2019_10_04_13_12"
+             "Clutch" = "run_19.run_2019_10_04_13_12",
+             "Flash" = "run_43.run_2019_10_04_13_22",
+             "Grunt" = "run_38.run_2019_10_04_13_28"
              #"StormShadow" = "run_11.run_2019_09_20_15_31",
              #"Flint" = "run_18.run_2019_09_20_15_49",
              #"QuickKick" = "run_1.run_2019_05_18_07_28",
