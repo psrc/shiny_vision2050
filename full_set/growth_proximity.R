@@ -229,7 +229,7 @@ for(itype in ind.types) {
       t <- merge(t, do.call(paste("get.byr.actuals", itype, geo, sep = "."), list()), by = "name_id", sort = FALSE, 
                  all.x = TRUE)
       t[name_id %in% c("minority", "non-minority", "poverty", "non-poverty"), (paste0("population_",fs.byr,"_actual")) := get(paste0("population_", fs.byr))
-        ][, (paste0("population_",fs.byr,"_total_actual")) := get(paste0("population_", fs.byr, "_total"))]
+        ][name_id %in% c("minority", "non-minority", "poverty", "non-poverty"), (paste0("population_",fs.byr,"_total_actual")) := get(paste0("population_", fs.byr, "_total"))]
     } else {
       # create control totals (similar to #30 jobs_pop_tod_areas.R)
       #ct_2017, use the 2017 census tract actual estimates of pop (SAEP) and jobs (tract file)
