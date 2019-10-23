@@ -15,9 +15,9 @@ set.globals <- TRUE
 # run scripts
 source("functions.R")
 if(run.screening.factors) {
-  #source("../screening_factors/jobs_housing_ratio.R") # 15, 18
+  source("../screening_factors/jobs_housing_ratio.R") # 15, 18
   setwd(wrk.dir)
-  #source("../screening_factors/housing_type_mix.R") # 17
+  source("../screening_factors/housing_type_mix.R") # 17
   setwd(wrk.dir)
   source("../screening_factors/growth_opp_areas.R") # 79
   setwd(wrk.dir)
