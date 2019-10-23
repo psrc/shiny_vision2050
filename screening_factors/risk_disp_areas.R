@@ -209,6 +209,7 @@ for (sheet in sheets) {
   og.comp.ind <- read.xlsx(file.path(data.dir, og.comp.ind.name), sheet = sheet) %>% as.data.table #, stringsAsFactors = FALSE
   setnames(og.comp.ind, c(colnames(og.comp.ind)[1], colnames(og.comp.ind)[4]), c("geoid10", "Comp.Index"))
   usim.blu <- fread(file.path(data.dir, "tract_opportunity_lookup.csv"), stringsAsFactors = FALSE)
+  usim.blu[, geoid10 := as.double(geoid10)]
   tract.lu <- og.comp.ind[usim.blu, on = "geoid10", `:=`(census_tract_id = i.census_tract_id)]
   
   # transform data ----------------------------------------------------------
