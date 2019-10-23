@@ -31,7 +31,7 @@ for (r in 1:length(rund)) {
 }
 
 run.dir <- c("DeepSix" = "run_44.run_2019_10_18_15_35",
-             "Wild Bill" = "run_39.run_2019_10_18_15_36"
+             "WildBill" = "run_39.run_2019_10_18_15_36"
              #"Breaker" = "run_12.run_2019_10_04_12_54",
              #"Clutch" = "run_19.run_2019_10_04_13_12",
              #"Flash" = "run_43.run_2019_10_04_13_22",
