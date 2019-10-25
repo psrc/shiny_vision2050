@@ -31,9 +31,9 @@ for (r in 1:length(rund)) {
 }
 
 run.dir <- c("DeepSix" = "run_44.run_2019_10_18_15_35",
-             "WildBill" = "run_39.run_2019_10_18_15_36"
-             #"Breaker" = "run_12.run_2019_10_04_12_54",
-             #"Clutch" = "run_19.run_2019_10_04_13_12",
+             "WildBill" = "run_39.run_2019_10_18_15_36",
+             "Breaker" = "run_12.run_2019_10_04_12_54",
+             "Clutch" = "run_19.run_2019_10_04_13_12",
              #"Flash" = "run_43.run_2019_10_04_13_22",
              #"Grunt" = "run_38.run_2019_10_04_13_28",
              #"Duke" ="run_2.run_2019_05_22_12_21",
@@ -49,9 +49,9 @@ run.dir <- c("DeepSix" = "run_44.run_2019_10_18_15_35",
              #"SgtSlaughter" = "run_7.run_2019_07_04_11_37"#, # N drive
              #"NemesisEnforcer" = "run_4.run_2019_06_29_07_47", # N drive
              #"LiftTicket" = "run_3.run_2019_06_13_14_36"#,
-             #"STC" = "KEEP DSEIS STC run_6.run_2018_10_23_11_15",
-             #"RUG" = "KEEP DSEIS RUG run_5.run_2018_10_25_09_07",
-             #"TFG" = "KEEP DSEIS TFG run_8.run_2018_10_29_15_01"#,
+             "STC-NB" = "KEEP DSEIS STC run_6.run_2018_10_23_11_15",
+             "RUG-NB" = "KEEP DSEIS RUG run_5.run_2018_10_25_09_07",
+             "TFG-NB" = "KEEP DSEIS TFG run_8.run_2018_10_29_15_01"#,
              # "DUG" = "run_4.run_2018_10_02_11_57", 
              # "H2O2" = "run_6.run_2018_10_02_12_01",
              # "TOD" = "run_3.run_2018_10_02_14_30",

@@ -11,12 +11,13 @@ if(!exists("set.globals") || !set.globals) {
   # source("functions.R")
 }
 
-out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Tables/Working"
+# out.dir <- "J:/Projects/V2050/SEIS/Data_Support/Tables/Working"
+out.dir <- "C:/Users/clam/Desktop/shiny_vision2050/scripts_results" # Test
 
 out.file.nm <- "23_tod_population_2017"
 
 # base year actuals -------------------------------------------------------
-pop.file.nm <- "J:/Projects/Population/OFMPopHsgData/OFMSAEP/Custom_Ests/HHPop_est_Block_Spilt/tod2_V2050/est2017/tod_est2017.xlsx"
+pop.file.nm <- "J:/Projects/Population/OFMPopHsgData/OFMSAEP/Custom_Ests/HHPop_est_Block_Spilt/tod3_V2050/est2017/tod_est2017.xlsx"
 ofm.file.nm <- "J:/OtherData/OFM/SAEP/SAEP Extract_2017_10October03/requests/v2050/county.xlsx"
 
 # total population in tod (tod2 blocksplits, does not sum to regional total)
