@@ -36,7 +36,7 @@ attributes <- c("employment", "population")
 ind.extension <- ".csv" 
 
 
-# functions ----------------------------------------------------------
+# Actuals ----------------------------------------------------------
 
 compile.control.totals <- function(workbook) {
   wb <- loadWorkbook(file.path(data.dir, workbook))
@@ -382,7 +382,7 @@ create.tod.equity.table.flex <- function(rundir, todpopactfile, tracttodempactfi
   setnames(edt.tod.cast, "equity", "Countyname")
 }
 
-# Regional Totals (base) ---------------------------------------------------------
+# regional totals (base) ---------------------------------------------------------
 
 
 create.regional.totals.base <- function(rundir, gqfile, gqtodidcol, milgeofile, miltodidcol) {
@@ -455,25 +455,9 @@ transform.regional.forecast <-function(rundir, gqfile, gqtodidcol, millufilename
   return(dt)
 }
 
-#Test Pad----------------------------------------------------------------------
-# ct.test <- transform.control.totals("tod_est2017.xlsx", "tod_employment_2017_23.xlsx")
-# ctdt.test <- ct.test[Countyname == "Region", ]
 
-# ebase.test <- compile.modeled.equity.base.flex(run.dir) # don't need in final function
-# eact.test <- compile.tod.actuals.equity.flex("tod_est2017.xlsx", "Tracts_TOD_Employment.xlsx")# don't need in final function
-# ect <- compile.control.totals.equity()# don't need in final function
+# compile master table ----------------------------------------------------
 
-# dt.equity.test <- create.tod.equity.table.flex(rundir = run.dir,
-#                                                todpopactfile = "tod_est2017.xlsx",
-#                                                tracttodempactfile = "Tracts_TOD_Employment.xlsx",
-#                                                gqfile = "group_quarters_geo_test_cll.xlsx",
-#                                                gqtodidcol = "tod_id2",
-#                                                millufilename = "enlisted_personnel_geo_test_cll.xlsx",
-#                                                miltodidcol = "tod_id2")
-# dt.cnty.test <- create.tod.by.county.table.flex(run.dir, "group_quarters_geo_test_cll.xlsx", gqtodidcol = "tod_id2", "enlisted_personnel_geo_test_cll.xlsx", miltodidcol = "tod_id2", ct.test)
-
-# region.test <- create.regional.totals.base(run.dir, "group_quarters_geo_test_cll.xlsx", gqtodidcol = "tod_id2", "enlisted_personnel_geo_test_cll.xlsx", miltodidcol = "tod_id2")
-# dt.test <- transform.regional.forecast(run.dir, "group_quarters_geo_test_cll.xlsx", gqtodidcol = "tod_id2", "enlisted_personnel_geo_test_cll.xlsx", miltodidcol = "tod_id2", region.test, ctdt.test)
 
 compile.master.dt <- function(rundir, todpopactfile, todempactfile, tracttodempactfile, gqfile, gqtodidcol, millufilename, miltodidcol) {
   ct <- transform.control.totals(todpopactfile, todempactfile)
@@ -492,49 +476,33 @@ compile.master.dt <- function(rundir, todpopactfile, todempactfile, tracttodempa
   dt.all <- rbindlist(list(dt.cnty, dt.equity, dt), use.names = TRUE)
 }
 
+inputs.list <- list(oth = list(rundir = run.dir.oth,
+                            todpopactfile = "tod_est2017.xlsx", 
+                            todempactfile = "tod_employment_2017_23.xlsx",
+                            tracttodempactfile = "Tracts_TOD_Employment.xlsx",
+                            gqfile = "group_quarters_geo.xlsx",
+                            gqtodidcol = "tod_id",
+                            millufilename = "enlisted_personnel_geo.xlsx",
+                            miltodidcol = "tod_id"),
+                    ppa = list(rundir = run.dir.ppa,
+                           todpopactfile = "tod_est2017_ppa.xlsx", 
+                           todempactfile = "tod_employment_2017_23_ppa.xlsx",
+                           tracttodempactfile = "Tracts_TOD_Employment_ppa.xlsx",
+                           gqfile = "group_quarters_geo_test_cll.xlsx",
+                           gqtodidcol = "tod_id2",
+                           millufilename = "enlisted_personnel_geo_test_cll.xlsx",
+                           miltodidcol = "tod_id2")
+                    ) 
+
 if (length(run.dir.ppa) == 0) {
   # dt.oth
-  dt.all <- compile.master.dt(rundir = run.dir.oth,
-                              todpopactfile = "tod_est2017.xlsx", 
-                              todempactfile = "tod_employment_2017_23.xlsx",
-                              tracttodempactfile = "Tracts_TOD_Employment.xlsx",
-                              gqfile = "group_quarters_geo.xlsx",
-                              gqtodidcol = "tod_id",
-                              millufilename = "enlisted_personnel_geo.xlsx",
-                              miltodidcol = "tod_id"
-  )
+  dt.all <- do.call("compile.master.dt", inputs.list$oth)
 } else if (length(run.dir.oth) == 0) {
   # dt.ppa
-  dt.all <- compile.master.dt(rundir = run.dir.ppa,
-                              todpopactfile = "tod_est2017_ppa.xlsx", 
-                              todempactfile = "tod_employment_2017_23_ppa.xlsx",
-                              tracttodempactfile = "Tracts_TOD_Employment_ppa.xlsx",
-                              gqfile = "group_quarters_geo_test_cll.xlsx",
-                              gqtodidcol = "tod_id2",
-                              millufilename = "enlisted_personnel_geo_test_cll.xlsx",
-                              miltodidcol = "tod_id2"
-  )
-  
+  dt.all <- do.call("compile.master.dt", inputs.list$ppa)
 } else {
-  dt.oth <- compile.master.dt(rundir = run.dir.oth,
-                              todpopactfile = "tod_est2017.xlsx", 
-                              todempactfile = "tod_employment_2017_23.xlsx",
-                              tracttodempactfile = "Tracts_TOD_Employment.xlsx",
-                              gqfile = "group_quarters_geo.xlsx",
-                              gqtodidcol = "tod_id",
-                              millufilename = "enlisted_personnel_geo.xlsx",
-                              miltodidcol = "tod_id"
-  )
-  dt.ppa <- compile.master.dt(rundir = run.dir.ppa,
-                              todpopactfile = "tod_est2017_ppa.xlsx", 
-                              todempactfile = "tod_employment_2017_23_ppa.xlsx",
-                              tracttodempactfile = "Tracts_TOD_Employment_ppa.xlsx",
-                              gqfile = "group_quarters_geo_test_cll.xlsx",
-                              gqtodidcol = "tod_id2",
-                              millufilename = "enlisted_personnel_geo_test_cll.xlsx",
-                              miltodidcol = "tod_id2"
-  )
-  
+  dt.oth <- do.call("compile.master.dt", inputs.list$oth)
+  dt.ppa <- do.call("compile.master.dt", inputs.list$ppa)
   dt.all <- rbindlist(list(dt.oth, dt.ppa), use.names = TRUE)
 }
 
