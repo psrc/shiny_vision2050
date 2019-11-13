@@ -31,8 +31,16 @@ for (r in 1:length(rund)) {
 #              Modelsrv8 = "//MODELSRV8/d$/opusgit/urbansim_data/data/psrc_parcel/runs",
 #              Modelsrv3 = "//modelsrv3/e$/opusgit/urbansim_data/data/psrc_parcel/runs"
 # )
-
-run.dir <- c("SgtSlaughter" = "run_7.run_2019_07_04_11_37"
+ppa.list <- c() # add only name of run (e.g. "WildBill") if it is a PPA, it should also be included in run.dir. This is for indicator #30 (jobs_pop_tod_areas.R)
+run.dir <- c(#"ShortFuse" = "run_13.run_2019_10_31_14_10",
+             # "GrandSlam" = "run_20.run_2019_10_31_14_17",
+             # "Torpedo" = "run_40.run_2019_10_31_14_31"
+             "RockNRoll" = "run_45.run_2019_10_31_14_30"
+             # "DeepSix" = "run_44.run_2019_10_18_15_35",
+             # "WildBill" = "run_39.run_2019_10_18_15_36"#,
+             # "Breaker" = "run_12.run_2019_10_04_12_54",
+             # "Clutch" = "run_19.run_2019_10_04_13_12"#,
+             # "SgtSlaughter" = "run_7.run_2019_07_04_11_37"#,
              # "NemesisEnforcer" = "run_4.run_2019_06_29_07_47" # N drive
              #"Serpentor" = "run_18.run_2019_06_06_19_53"#, # N drive
              # "Destro" = "run_16.run_2019_06_06_20_01"#, # N drive

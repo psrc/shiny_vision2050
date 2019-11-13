@@ -19,6 +19,11 @@ out.file.nm <- settings$pjta$out.file.nm
 
 # general -----------------------------------------------------------------
 
+# Dual tracking...
+# identify runs that are PPA and those that are not
+run.dir.ppa <- run.dir[names(run.dir) %in% ppa.list]
+run.dir.oth <- run.dir[!(names(run.dir) %in% ppa.list)] 
+
 years.col <- paste0("yr", c(byr, years))
 
 # format run names for table
@@ -98,25 +103,40 @@ query.gq <- function(gqfilename, geos, yrs) {
   df <- df[year %in% yrs, ][, lapply(.SD, sum), .SDcols = "gq", by = c(geos, "year")][!is.na(get(eval(geos[1]))),]
 }
 
-gq <- query.gq("group_quarters_geo.xlsx", c("tod_id"), c("2017", "2050"))
-mil.df <- query.military(enlist.mil.file.nm, c("tod_id"), c("2017", "2050"))
+query.military.tod <- function(milfilename, millufilename, geos, yrs) {
+  mil <- fread(file.path(data.dir, milfilename))
+  mil <- mil[!is.na(ParcelID)]
+  # enlist.lu <- as.data.table(enlist.lu)
+  enlist.lu <- read.xlsx(file.path(data.dir, millufilename)) %>% as.data.table
+  milgeo <- mil[enlist.lu, on = c("Base", "Zone", "ParcelID" = "parcel_id")]
+  df <- melt.data.table(milgeo, id.vars = geos, measure.vars = grep("^\\d+", colnames(milgeo)), variable.name = "year", value.name = "enlist_estimate")
+  df <- df[year %in% yrs, ][, lapply(.SD, sum), .SDcols = "enlist_estimate", by = c(geos, "year")]
+  tod.col <- str_subset(colnames(df), "tod")
+  setnames(df, tod.col, "tod_id")
+  return(df)
+}
 
-# actuals
-ct <- compile.control.totals("2017_actuals_2050_controls.xlsx")
+query.gq.tod <- function(gqfilename, geos, yrs) {
+  gq <- read.xlsx(file.path(data.dir, gqfilename)) %>% as.data.table
+  df <- melt.data.table(gq, id.vars = geos, measure.vars = grep("^\\d+", colnames(gq)), variable.name = "year", value.name = "gq")
+  df <- df[year %in% yrs, ][, lapply(.SD, sum), .SDcols = "gq", by = c(geos, "year")][!is.na(get(eval(geos[1]))),]
+  tod.col <- str_subset(colnames(df), "tod")
+  setnames(df, tod.col, "tod_id")
+  return(df)
+}
 
-
-# Network Buffer vs As-Crow-Flies actual estimates ------------------------
-
-
-todbya <- compile.tod.baseyear.actuals("tod_est2017.xlsx", "tod_employment_2017_23.xlsx") # original network buffer (TOD 1-6)
-# todbya <- compile.hct.baseyear.actuals() # as the crow flies buffer (HCT 1-9)
-
-ct[todbya, on = c("Countyname" = "County", "indicator"), ("byr_tod_actual") := i.estimate]
-# ct <- ct[scenario %in% names(run.dir), ][, (paste0("byr_share_in_tod_actual")) := byr_tod_actual/get(paste0("ct_", byr))] # original
-ct <- ct[indicator != "AU" & scenario %in% names(run.dir), ][, (paste0("byr_share_in_tod_actual")) := byr_tod_actual/get(paste0("ct_", byr))]
-ct$run <- run.dir[ct$scenario]
-ctdt <- ct[Countyname == "Region", ]
-
+transform.control.totals <- function(todpopactfile, todempactfile) {
+  # returns ct with calulations, cnty + region
+  ct <- compile.control.totals("2017_actuals_2050_controls.xlsx")
+  todbya <- compile.tod.baseyear.actuals(todpopactfile, todempactfile) # original network buffer (TOD 1-6)
+  # todbya <- compile.hct.baseyear.actuals() # as the crow flies buffer (HCT 1-9)
+  
+  ct[todbya, on = c("Countyname" = "County", "indicator"), ("byr_tod_actual") := i.estimate]
+  # ct <- ct[scenario %in% names(run.dir), ][, (paste0("byr_share_in_tod_actual")) := byr_tod_actual/get(paste0("ct_", byr))] # original
+  ct <- ct[indicator != "AU" & scenario %in% names(run.dir), ][, (paste0("byr_share_in_tod_actual")) := byr_tod_actual/get(paste0("ct_", byr))]
+  ct$run <- run.dir[ct$scenario]
+  return(ct)
+}
 
 # transform county forecast -----------------------------------------------
 
@@ -147,13 +167,13 @@ compile.tod.by.county.files <- function(geog, allruns, run.dir, attributes, ind.
     }
   }
   return(df)
-} 
+}
 
-create.tod.by.county.table <- function() {
-  gq.cnty <- query.gq("group_quarters_geo.xlsx", c("county_id", "tod_id"), c("2017", "2050"))
+create.tod.by.county.table.flex <- function(rundir, gqfile, gqtodidcol, millufilename, miltodidcol, ct) {
+  gq.cnty <- query.gq.tod(gqfile, c("county_id", gqtodidcol), c("2017", "2050"))
   gq.cnty[, countyname := switch(as.character(county_id), "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = county_id
           ][, indicator := "population"]
-  mil.df.cnty <- query.military(enlist.mil.file.nm, c("county_id", "tod_id"), c("2017", "2050"))
+  mil.df.cnty <- query.military.tod(enlist.mil.file.nm, millufilename, c("county_id", miltodidcol), c("2017", "2050"))
   mil.df.cnty[, countyname := switch(as.character(county_id), "33" = "King", "35" = "Kitsap", "53" = "Pierce", "61" = "Snohomish"), by = county_id
               ][, indicator := "employment"]
   
@@ -161,7 +181,7 @@ create.tod.by.county.table <- function() {
   gq.cnty2 <- gq.cnty[, lapply(.SD, sum), .SDcols = c("gq"), by = .(year, countyname, indicator)]
   mil.df.cnty2 <- mil.df.cnty[, lapply(.SD, sum), .SDcols = c("enlist_estimate"), by = .(year, countyname, indicator)]
   
-  df.cnty <- compile.tbl('county', allruns, run.dir, attributes, ind.extension)
+  df.cnty <- compile.tbl('county', allruns, rundir, attributes, ind.extension)
   base <- melt.data.table(df.cnty, 
                           id.vars = c("name_id", "indicator", "run"), 
                           measure.vars = grep("^yr\\d+", colnames(df.cnty)), variable.name = "year", value.name = "base")
@@ -174,7 +194,7 @@ create.tod.by.county.table <- function() {
   dt.base <- df.base[, .(countyname, indicator, run, year, base = base_plus)]
   
   # county tod
-  df <- compile.tod.by.county.files('tod', allruns, run.dir, attributes, ind.extension)
+  df <- compile.tod.by.county.files('tod', allruns, rundir, attributes, ind.extension)
   dt <- df[year %in% c(byr, years)]
   dt[gq.cnty, on = c("name_id" = "tod_id", "countyname", "year", "indicator"), gq := i.gq][is.na(gq), gq := 0]
   dt[mil.df.cnty, on = c("name_id" = "tod_id", "countyname", "year", "indicator"), enlist := i.enlist_estimate][is.na(enlist), enlist := 0]
@@ -192,7 +212,7 @@ create.tod.by.county.table <- function() {
   setnames(dt.tod.cast, paste0("estimate_", years), paste0("yr", years, "_tod"))
   setnames(dt.tod.cast, paste0("base_", years), paste0("yr", years, "_base"))
   
-  ct.cnty <- ct[Countyname != "Region",]
+  ct.cnty <- ct[Countyname != "Region",] # ct referenced here!!!!
   dt.tod.cnty <- ct.cnty[dt.tod.cast, on = c("Countyname" = "countyname", "run", "indicator")]
   dt.tod.cnty[, (paste0(years.col[2], "_share_in_tod")) := (byr_tod_actual + delta_tod)/(get(paste0("ct_", byr)) + delta_base)]
 }
@@ -201,10 +221,10 @@ create.tod.by.county.table <- function() {
 # equity ------------------------------------------------------------------
 
 
-compile.modeled.equity.base <- function() {
+compile.modeled.equity.base.flex <- function(rundir) {
   # compile modeled equity data from region
   file.regexp <- paste0("(^minority|^poverty).*(employment|population)\\.csv")
-  edf <- compile.tbl.equity(file.regexp, allruns, run.dir, ind.extension)
+  edf <- compile.tbl.equity(file.regexp, allruns, rundir, ind.extension)
   edf[, equity := switch(name_id, `1` = paste0("non-", generic_equity), `2` = generic_equity), by = name_id
       ][, indicator := str_extract(variable, "^[[:alpha:]]+")] # create new field equity: 1 = non-minority/poverty, 2 = minority/poverty
   edt <- edf[year %in% c(byr, years)]
@@ -224,11 +244,11 @@ compile.modeled.equity.base <- function() {
   egq <- query.gq("group_quarters_geo.xlsx", c("minority_id", "poverty_id"), c("2017", "2050"))
   egq[, `:=` (minority_id = as.character(minority_id), poverty_id = as.character(poverty_id))]
   egq[, minority := switch(minority_id, "0" = "non-minority", "1" = "minority"), by = minority_id
-       ][, poverty := switch(poverty_id, "0" = "non-poverty", "1" = "poverty"), by = poverty_id
-         ][, indicator := "population"]
+      ][, poverty := switch(poverty_id, "0" = "non-poverty", "1" = "poverty"), by = poverty_id
+        ][, indicator := "population"]
   egqdt <- melt.data.table(egq, 
-                            id.vars = c("indicator", "gq", "year"), 
-                            measure.vars = c("minority", "poverty"), variable.name = "generic_equity", value.name = "equity")
+                           id.vars = c("indicator", "gq", "year"), 
+                           measure.vars = c("minority", "poverty"), variable.name = "generic_equity", value.name = "equity")
   gqdt <- egqdt[, lapply(.SD, sum), .SDcols = c("gq"), by = .(indicator, equity, year)]
   
   edt[mildt, on = c("equity", "indicator", "year"), enlist := i.enlist_estimate][is.na(enlist), enlist := 0]
@@ -237,13 +257,13 @@ compile.modeled.equity.base <- function() {
   dt <- edt[, lapply(.SD, sum), .SDcols = c("estimate_plus"), by = .(indicator, equity, run, year)]
   setnames(dt, "estimate_plus", "base")
   return(dt)
-} 
+}
 
-compile.tod.actuals.equity <- function() {
+compile.tod.actuals.equity.flex <- function(todpopactfile, tracttodempactfile) {
   # 2017 in tod actuals
   eqlu <- read.equity.lu()
-  popfilename <- "tod_est2017.xlsx"
-  empfilename <- "Tracts_TOD_Employment.xlsx"
+  popfilename <- todpopactfile
+  empfilename <- tracttodempactfile
   # pop
   pop <- read.xlsx(file.path(data.dir, popfilename)) %>% as.data.table
   pop[, `:=` (tGEOID10 = as.character(str_sub(GEOID10, start = 1, end = 11)), indicator = "population")]
@@ -264,7 +284,7 @@ compile.tod.actuals.equity <- function() {
                         id.vars = c("GEOID10", "estimate", "indicator"), 
                         measure.vars = c("minority", "poverty"), variable.name = "generic_equity", value.name = "equity")
   edt <- e2[, lapply(.SD, sum), .SDcols = c("estimate"), by = .(equity, indicator)]
-
+  
   dt <- rbindlist(list(pdt, edt), use.names = TRUE)
   setnames(dt, "estimate", "byr_tod_actual")
 }
@@ -292,8 +312,9 @@ compile.control.totals.equity <- function() {
   d3 <- d2[, lapply(.SD, sum), .SDcols = c("ct_byr"), by = .(equity, indicator)]
 }
 
-create.tod.equity.table <- function() {
-  eact <- compile.tod.actuals.equity() # 2017 actuals
+create.tod.equity.table.flex <- function(rundir, todpopactfile, tracttodempactfile, gqfile, gqtodidcol, millufilename, miltodidcol) {
+  # eact <- compile.tod.actuals.equity() # 2017 actuals
+  eact <- compile.tod.actuals.equity.flex(todpopactfile, tracttodempactfile)
   
   # create control totals 
   #ct_2017, use the 2017 census tract actual estimates of pop (SAEP) and jobs (tract file)
@@ -301,11 +322,12 @@ create.tod.equity.table <- function() {
   #ct_2050, add ct_2017 and ct_2017-2050
   ect <- compile.control.totals.equity()
   
-  ebase <- compile.modeled.equity.base() # modeled equity base
-
+  # ebase <- compile.modeled.equity.base() # modeled equity base
+  ebase <- compile.modeled.equity.base.flex(rundir)
+  
   # modeled in tod by equity
   # gq
-  egq <- query.gq("group_quarters_geo.xlsx", c("tod_id", "minority_id", "poverty_id"), c("2017", "2050"))
+  egq <- query.gq.tod(gqfile, c(gqtodidcol, "minority_id", "poverty_id"), c("2017", "2050"))
   egq[, `:=` (minority_id = as.character(minority_id), poverty_id = as.character(poverty_id))]
   egq[, minority := switch(minority_id, "0" = "non-minority", "1" = "minority"), by = minority_id
       ][, poverty := switch(poverty_id, "0" = "non-poverty", "1" = "poverty"), by = poverty_id
@@ -316,7 +338,7 @@ create.tod.equity.table <- function() {
   gqdt <- egqdt[, lapply(.SD, sum), .SDcols = "gq", by = .(tod_id, indicator, year, equity)]
   
   # mil
-  emil <- query.military(enlist.mil.file.nm, c("tod_id", "minority_id", "poverty_id"), c("2017", "2050"))
+  emil <- query.military.tod(enlist.mil.file.nm, millufilename, c(miltodidcol, "minority_id", "poverty_id"), c("2017", "2050"))
   emil[, `:=` (minority_id = as.character(minority_id), poverty_id = as.character(poverty_id))]
   emil[, minority := switch(minority_id, "0" = "non-minority", "1" = "minority"), by = minority_id
        ][, poverty := switch(poverty_id, "0" = "non-poverty", "1" = "poverty"), by = poverty_id
@@ -327,9 +349,9 @@ create.tod.equity.table <- function() {
   mildt <- emildt[, lapply(.SD, sum), .SDcols = "enlist_estimate", by = .(tod_id, indicator, year, equity)]
   # modeled data
   file.regxpr <- "(^tod).*(population|employment)\\.csv"
-  edf <- compile.tbl.equity(file.regxpr, allruns, run.dir, ind.extension)
+  edf <- compile.tbl.equity(file.regxpr, allruns, rundir, ind.extension) # rundir refereced here!!!!!!!!!
   edf[, equity := str_extract(variable, "^\\w+(?=_\\w+_\\d+)")
-     ][, `:=` (equity = str_replace(equity, "_", "-"), indicator = str_extract(variable, "[[:alpha:]]+(?=_\\d+)"))]
+      ][, `:=` (equity = str_replace(equity, "_", "-"), indicator = str_extract(variable, "[[:alpha:]]+(?=_\\d+)"))]
   edt <- edf[year %in% c(byr, years)]
   
   edt[mildt, on = c("name_id" = "tod_id", "indicator", "equity", "year"), enlist := i.enlist_estimate][is.na(enlist), enlist := 0]
@@ -339,7 +361,7 @@ create.tod.equity.table <- function() {
                  ][, .(equity, year, run, indicator, estimate = estimate_plus)
                    ][, lapply(.SD, sum), .SDcols = c("estimate"), by = .(equity, year, run, indicator)]
   edt.tod[ebase, on = c("equity", "indicator", "run", "year"), base := i.base]
-
+  
   edt.tod.cast <- dcast.data.table(edt.tod, equity + run + indicator ~ year, value.var = c("estimate", "base"))
   delta.expr <- parse(text = paste0("delta_tod := estimate_", years, " - estimate_", byr))
   deltareg.expr <- parse(text = paste0("delta_base := base_", years, " - base_", byr))
@@ -360,71 +382,162 @@ create.tod.equity.table <- function() {
   setnames(edt.tod.cast, "equity", "Countyname")
 }
 
-
 # Regional Totals (base) ---------------------------------------------------------
 
-mil.df2 <- mil.df[, .(enlist_estimate = sum(enlist_estimate)), by = year]
-gq2 <- gq[, .(gq = sum(gq)), by = year]
 
-# include enlisted personnel and GQ
-df.cnty <- compile.tbl('county', allruns, run.dir, attributes, ind.extension)
-region.fcast <- df.cnty[, lapply(.SD, sum), .SDcols = years.col, by = c("indicator", "run")]
-region <- melt(region.fcast, id.vars = c("indicator", "run"), variable.name = "year", value.name = "estimate")
-region$year <- gsub("yr", "", region$year)
-region[gq2, gq := i.gq, on = "year"]
-region[mil.df2, enlist := i.enlist_estimate, on = "year"]
-region[indicator == "population", region := estimate + gq]
-region[indicator == "employment", region := estimate + enlist]
-
+create.regional.totals.base <- function(rundir, gqfile, gqtodidcol, milgeofile, miltodidcol) {
+  gq <- query.gq.tod(gqfile, c(gqtodidcol), c("2017", "2050"))
+  mil.df <- query.military.tod(enlist.mil.file.nm, milgeofile, c(miltodidcol), c("2017", "2050"))
+  
+  mil.df2 <- mil.df[, .(enlist_estimate = sum(enlist_estimate)), by = year]
+  gq2 <- gq[, .(gq = sum(gq)), by = year]
+  
+  # include enlisted personnel and GQ
+  df.cnty <- compile.tbl('county', allruns, rundir, attributes, ind.extension)
+  region.fcast <- df.cnty[, lapply(.SD, sum), .SDcols = years.col, by = c("indicator", "run")]
+  region <- melt(region.fcast, id.vars = c("indicator", "run"), variable.name = "year", value.name = "estimate")
+  region$year <- gsub("yr", "", region$year)
+  region[gq2, gq := i.gq, on = "year"]
+  region[mil.df2, enlist := i.enlist_estimate, on = "year"]
+  region[indicator == "population", region := estimate + gq]
+  region[indicator == "employment", region := estimate + enlist]
+  return(region)
+}
 
 # transform regional forecast ---------------------------------------------
 
-alldata <- compile.tbl('tod', allruns, run.dir, attributes, ind.extension)
 
-df2 <- melt.data.table(alldata,
-                       id.vars = c("name_id", "run", "indicator"),
-                       measure.vars = grep("yr", colnames(alldata), value = TRUE),
-                       variable.name = "year", value.name = "estimate")
-df3 <- df2[year %in% years.col]
-df3$year <- gsub("yr", "", df3$year)
+transform.regional.forecast <-function(rundir, gqfile, gqtodidcol, millufilename, miltodidcol, regionbase, ctdt) {
+  alldata <- compile.tbl('tod', allruns, rundir, attributes, ind.extension)
+  
+  df2 <- melt.data.table(alldata,
+                         id.vars = c("name_id", "run", "indicator"),
+                         measure.vars = grep("yr", colnames(alldata), value = TRUE),
+                         variable.name = "year", value.name = "estimate")
+  df3 <- df2[year %in% years.col]
+  df3$year <- gsub("yr", "", df3$year)
+  
+  gq <- query.gq.tod(gqfile, c(gqtodidcol), c("2017", "2050"))
+  mil.df <- query.military.tod(enlist.mil.file.nm, millufilename, c(miltodidcol), c("2017", "2050"))
+  
+  # add GQ to forecast population df
+  df4.gq <- df3 %>%
+    left_join(gq, by = c("name_id" = "tod_id", "year")) %>%
+    replace_na(list(gq = 0)) %>%
+    left_join(mil.df, by = c("name_id" = "tod_id", "year")) %>% 
+    replace_na(list(enlist_estimate = 0)) %>%
+    as.data.table()
+  df4.gq2 <- copy(df4.gq)
+  df4.gq2 <- df4.gq2[name_id > 0] # select only TODs 
+  df4.gq2[indicator == "population", estimate_w_milgq := estimate + gq]
+  df4.gq2[indicator == "employment", estimate_w_milgq := estimate + enlist_estimate]
+  df4.gq2 <- df4.gq2[, .(estimate_w_milgq = sum(estimate_w_milgq)), by = .(run, indicator, year)]
+  df4.gq2[regionbase, base := i.region, on = c("indicator", "year", "run")]
+  
+  setnames(df4.gq2, "estimate_w_milgq", "estimate")
+  df6 <- dcast(df4.gq2, run + indicator ~ year, value.var = c("estimate", "base"))
+  delta.expr <- parse(text = paste0("delta_tod := estimate_", years, " - estimate_", byr))
+  deltareg.expr <- parse(text = paste0("delta_base := base_", years, " - base_", byr))
+  df6[, eval(delta.expr)][, eval(deltareg.expr)]
+  
+  sdcols <- c(2017, years)
+  
+  df7.cast <- copy(df6)
+  df7.cast[, delta_share_in_tod := delta_tod/delta_base]
+  # rename column to be compatible with the previous version
+  setnames(df7.cast, paste0("estimate_", byr), "byr_tod")
+  setnames(df7.cast, paste0("base_", byr), "byr_base")
+  setnames(df7.cast, paste0("estimate_", years), paste0("yr", years, "_tod"))
+  setnames(df7.cast, paste0("base_", years), paste0("yr", years, "_base"))
+  # join ctdt & modeled dt; calc share_in_tod_2050
+  dt <- ctdt[df7.cast, on = c("run", "indicator")]
+  dt[, (paste0(years.col[2], "_share_in_tod")) := (byr_tod_actual + delta_tod)/(get(paste0("ct_", byr)) + delta_base)]
+  return(dt)
+}
 
-# add GQ to forecast population df
-df4.gq <- df3 %>%
-  left_join(gq, by = c("name_id" = "tod_id", "year")) %>%
-  replace_na(list(gq = 0)) %>%
-  left_join(mil.df, by = c("name_id" = "tod_id", "year")) %>% 
-  replace_na(list(enlist_estimate = 0)) %>%
-  as.data.table()
-df4.gq2 <- copy(df4.gq)
-df4.gq2 <- df4.gq2[name_id > 0] # select only TODs 
-df4.gq2[indicator == "population", estimate_w_milgq := estimate + gq]
-df4.gq2[indicator == "employment", estimate_w_milgq := estimate + enlist_estimate]
-df4.gq2 <- df4.gq2[, .(estimate_w_milgq = sum(estimate_w_milgq)), by = .(run, indicator, year)]
-df4.gq2[region, base := i.region, on = c("indicator", "year", "run")]
+#Test Pad----------------------------------------------------------------------
+# ct.test <- transform.control.totals("tod_est2017.xlsx", "tod_employment_2017_23.xlsx")
+# ctdt.test <- ct.test[Countyname == "Region", ]
 
-setnames(df4.gq2, "estimate_w_milgq", "estimate")
-df6 <- dcast(df4.gq2, run + indicator ~ year, value.var = c("estimate", "base"))
-delta.expr <- parse(text = paste0("delta_tod := estimate_", years, " - estimate_", byr))
-deltareg.expr <- parse(text = paste0("delta_base := base_", years, " - base_", byr))
-df6[, eval(delta.expr)][, eval(deltareg.expr)]
+# ebase.test <- compile.modeled.equity.base.flex(run.dir) # don't need in final function
+# eact.test <- compile.tod.actuals.equity.flex("tod_est2017.xlsx", "Tracts_TOD_Employment.xlsx")# don't need in final function
+# ect <- compile.control.totals.equity()# don't need in final function
 
-sdcols <- c(2017, years)
+# dt.equity.test <- create.tod.equity.table.flex(rundir = run.dir,
+#                                                todpopactfile = "tod_est2017.xlsx",
+#                                                tracttodempactfile = "Tracts_TOD_Employment.xlsx",
+#                                                gqfile = "group_quarters_geo_test_cll.xlsx",
+#                                                gqtodidcol = "tod_id2",
+#                                                millufilename = "enlisted_personnel_geo_test_cll.xlsx",
+#                                                miltodidcol = "tod_id2")
+# dt.cnty.test <- create.tod.by.county.table.flex(run.dir, "group_quarters_geo_test_cll.xlsx", gqtodidcol = "tod_id2", "enlisted_personnel_geo_test_cll.xlsx", miltodidcol = "tod_id2", ct.test)
 
-df7.cast <- copy(df6)
-df7.cast[, delta_share_in_tod := delta_tod/delta_base]
-# rename column to be compatible with the previous version
-setnames(df7.cast, paste0("estimate_", byr), "byr_tod")
-setnames(df7.cast, paste0("base_", byr), "byr_base")
-setnames(df7.cast, paste0("estimate_", years), paste0("yr", years, "_tod"))
-setnames(df7.cast, paste0("base_", years), paste0("yr", years, "_base"))
+# region.test <- create.regional.totals.base(run.dir, "group_quarters_geo_test_cll.xlsx", gqtodidcol = "tod_id2", "enlisted_personnel_geo_test_cll.xlsx", miltodidcol = "tod_id2")
+# dt.test <- transform.regional.forecast(run.dir, "group_quarters_geo_test_cll.xlsx", gqtodidcol = "tod_id2", "enlisted_personnel_geo_test_cll.xlsx", miltodidcol = "tod_id2", region.test, ctdt.test)
 
-# join ctdt & modeled dt; calc share_in_tod_2050
-dt <- ctdt[df7.cast, on = c("run", "indicator")]
-dt[, (paste0(years.col[2], "_share_in_tod")) := (byr_tod_actual + delta_tod)/(get(paste0("ct_", byr)) + delta_base)]
+compile.master.dt <- function(rundir, todpopactfile, todempactfile, tracttodempactfile, gqfile, gqtodidcol, millufilename, miltodidcol) {
+  ct <- transform.control.totals(todpopactfile, todempactfile)
+  ctdt <- ct[Countyname == "Region", ]
+  dt.equity <- create.tod.equity.table.flex(rundir,
+                                           todpopactfile,
+                                           tracttodempactfile,
+                                           gqfile,
+                                           gqtodidcol,
+                                           millufilename,
+                                           miltodidcol)
+  dt.cnty <- create.tod.by.county.table.flex(rundir, gqfile, gqtodidcol, millufilename, miltodidcol, ct)
+  
+  region <- create.regional.totals.base(rundir, gqfile, gqtodidcol, millufilename, miltodidcol)
+  dt <- transform.regional.forecast(rundir, gqfile, gqtodidcol, millufilename, miltodidcol, region, ctdt)
+  dt.all <- rbindlist(list(dt.cnty, dt.equity, dt), use.names = TRUE)
+}
 
-dt.cnty <- create.tod.by.county.table() # county geographies
-dt.equity <- create.tod.equity.table() # equity geographies
-dt.all <- rbindlist(list(dt.cnty, dt.equity, dt), use.names = TRUE) # bind all geographies
+if (length(run.dir.ppa) == 0) {
+  # dt.oth
+  dt.all <- compile.master.dt(rundir = run.dir.oth,
+                              todpopactfile = "tod_est2017.xlsx", 
+                              todempactfile = "tod_employment_2017_23.xlsx",
+                              tracttodempactfile = "Tracts_TOD_Employment.xlsx",
+                              gqfile = "group_quarters_geo.xlsx",
+                              gqtodidcol = "tod_id",
+                              millufilename = "enlisted_personnel_geo.xlsx",
+                              miltodidcol = "tod_id"
+  )
+} else if (length(run.dir.oth) == 0) {
+  # dt.ppa
+  dt.all <- compile.master.dt(rundir = run.dir.ppa,
+                              todpopactfile = "tod_est2017_ppa.xlsx", 
+                              todempactfile = "tod_employment_2017_23_ppa.xlsx",
+                              tracttodempactfile = "Tracts_TOD_Employment_ppa.xlsx",
+                              gqfile = "group_quarters_geo_test_cll.xlsx",
+                              gqtodidcol = "tod_id2",
+                              millufilename = "enlisted_personnel_geo_test_cll.xlsx",
+                              miltodidcol = "tod_id2"
+  )
+  
+} else {
+  dt.oth <- compile.master.dt(rundir = run.dir.oth,
+                              todpopactfile = "tod_est2017.xlsx", 
+                              todempactfile = "tod_employment_2017_23.xlsx",
+                              tracttodempactfile = "Tracts_TOD_Employment.xlsx",
+                              gqfile = "group_quarters_geo.xlsx",
+                              gqtodidcol = "tod_id",
+                              millufilename = "enlisted_personnel_geo.xlsx",
+                              miltodidcol = "tod_id"
+  )
+  dt.ppa <- compile.master.dt(rundir = run.dir.ppa,
+                              todpopactfile = "tod_est2017_ppa.xlsx", 
+                              todempactfile = "tod_employment_2017_23_ppa.xlsx",
+                              tracttodempactfile = "Tracts_TOD_Employment_ppa.xlsx",
+                              gqfile = "group_quarters_geo_test_cll.xlsx",
+                              gqtodidcol = "tod_id2",
+                              millufilename = "enlisted_personnel_geo_test_cll.xlsx",
+                              miltodidcol = "tod_id2"
+  )
+  
+  dt.all <- rbindlist(list(dt.oth, dt.ppa), use.names = TRUE)
+}
+
 countyname.sort <- c(counties, "poverty", "non-poverty", "minority", "non-minority", "Region")
 
 # loop through each run
