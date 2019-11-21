@@ -29,11 +29,12 @@ for (r in 1:length(rund)) {
     base <- append(base, file.path(rund[[r]], aws[[a]]), length(base))
   }
 }
-ppa.list <- c() # add only name of run (e.g. "WildBill") if it is a PPA, it should also be included in run.dir. This is for indicator #30 (jobs_pop_tod_areas.R)
-run.dir <- c(#"ShortFuse" = "run_13.run_2019_10_31_14_10",
+ppa.list <- c("Bazooka") # add only name of run (e.g. "Bazooka") if it is a PPA, it should also be included in run.dir. This is for indicator #30 (jobs_pop_tod_areas.R)
+run.dir <- c("Bazooka" = "run_46.run_2019_11_15_11_21"
+             #"ShortFuse" = "run_13.run_2019_10_31_14_10",
              # "GrandSlam" = "run_20.run_2019_10_31_14_17",
              # "Torpedo" = "run_40.run_2019_10_31_14_31"
-             "RockNRoll" = "run_45.run_2019_10_31_14_30"
+             # "RockNRoll" = "run_45.run_2019_10_31_14_30"
              # "DeepSix" = "run_44.run_2019_10_18_15_35",
              # "WildBill" = "run_39.run_2019_10_18_15_36",
              # "Breaker" = "run_12.run_2019_10_04_12_54",

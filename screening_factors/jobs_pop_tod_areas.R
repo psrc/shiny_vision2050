@@ -488,10 +488,10 @@ inputs.list <- list(oth = list(rundir = run.dir.oth,
                            todpopactfile = "tod_est2017_ppa.xlsx", 
                            todempactfile = "tod_employment_2017_23_ppa.xlsx",
                            tracttodempactfile = "Tracts_TOD_Employment_ppa.xlsx",
-                           gqfile = "group_quarters_geo_test_cll.xlsx",
-                           gqtodidcol = "tod_id2",
-                           millufilename = "enlisted_personnel_geo_test_cll.xlsx",
-                           miltodidcol = "tod_id2")
+                           gqfile = "group_quarters_geo.xlsx",
+                           gqtodidcol = "tod_id_expansion",
+                           millufilename = "enlisted_personnel_geo.xlsx",
+                           miltodidcol = "tod_id_expansion")
                     ) 
 
 if (length(run.dir.ppa) == 0) {
