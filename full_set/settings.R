@@ -29,8 +29,10 @@ for (r in 1:length(rund)) {
     base <- append(base, file.path(rund[[r]], aws[[a]]), length(base))
   }
 }
-ppa.list <- c("Bazooka") # add only name of run (e.g. "Bazooka") if it is a PPA, it should also be included in run.dir. This is for indicator #30 (jobs_pop_tod_areas.R)
-run.dir <- c("Bazooka" = "run_46.run_2019_11_15_11_21"
+ppa.list <- c("Footloose") # add only name of run (e.g. "Bazooka") if it is a P(P)A where TOD/HCT geography is different than the DSEIS,
+# it should also be included in run.dir. This is primarily for indicator #30 (jobs_pop_tod_areas.R)
+run.dir <- c("Footloose" = "run_47.run_2019_12_06_16_56"
+             # "Bazooka" = "run_46.run_2019_11_15_11_21"
              #"ShortFuse" = "run_13.run_2019_10_31_14_10",
              # "GrandSlam" = "run_20.run_2019_10_31_14_17",
              # "Torpedo" = "run_40.run_2019_10_31_14_31"
