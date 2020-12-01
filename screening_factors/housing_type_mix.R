@@ -29,7 +29,7 @@ filename.byr <- "parcel__dataset_table__households_jobs__2017.tab"
 dlist <- NULL
 for (r in 1:length(run.dir)) { # for each run
   pcl <- df <- NULL
-  base.dir <- purrr::pluck(allruns, run.dir[r]) 
+  base.dir <- purrr::pluck(allruns, run.dir[r])
   
   # load parcels - this will be an indicator file
   pcl <- fread(file.path(base.dir, "indicators", filename))
